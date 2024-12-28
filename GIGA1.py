@@ -53,7 +53,7 @@ async def check_keyboard():
         texto = texto + "import pyb"
     if Ptest1.value() == 0:
         print("pyb.LED(1).on()")
-        texto = texto + "import pyb"
+        texto = texto + "pyb.LED(1).on()"
 
 fil = open('tempo', 'w')
 fil.close()
