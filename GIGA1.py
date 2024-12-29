@@ -1,20 +1,16 @@
 from ssd1306 import SSD1306_I2C
 from machine import I2C, Pin
 import uasyncio
+from pyb import delay
 
-#module1 = ""
-
-#Oled display
 i2c = I2C(2)
 oled = SSD1306_I2C(128,64,i2c)
-def welcome(evento):
+def welcome():
     oled.fill(0)
     oled.text('WELCOME', 30,5)
     oled.text('GIGA1 is Ready.', 2,25)
-    oled.text("Let's go!", 2,45)
     oled.show()
-    await evento.wait()
-    evento.clear()
+    delay(2000)
 
 ##severals variables
 ##locals
@@ -42,17 +38,14 @@ async def check_keyboard():
     global texto
     ###basics commands
     if Penter.value() == 0:
-        #print("Penter is pressed")
         event = uasyncio.Event()
         uasyncio.create_task(enter(event))
         event.set()
 
-##tested commands
+    ###tested commands
     if Ptest.value() == 0:
-        print("Ptest is pressed")
         texto = texto + "import pyb"
     if Ptest1.value() == 0:
-        print("pyb.LED(1).on()")
         texto = texto + "pyb.LED(1).on()"
 
 fil = open('tempo', 'w')
@@ -66,7 +59,6 @@ async def enter(event):
             fil.close()
             mod = 0
             import fil
-            texto = "print('record ok')"
         else:
             fil.write(texto)
 
@@ -80,31 +72,15 @@ async def enter(event):
         mod = 2
     if texto[:6] == "import":
         textu = texto[7:]
-        print(textu)
-        if textu == 'time':
-            fil = open('tempo', 'w')
-            fil.write('time')
-            fil.close()
-            import export
-            print('imported time is done')
         if textu == 'pyb':
             fil = open('tempo', 'w')
             fil.write('pyb')
             fil.close()
             import export
-            print('imported pyb is done')
-        if textu == 'machine':
-            fil = open('tempo', 'w')
-            fil.write('machine')
-            fil.close()
-            import export
-            print('imported machine is done')
         if textu == 'myscript':
             import myscript ##which is in the lib folder
-            print('imported my script is done')
         if textu == 'redi':
             import redi
-
         texto = ""
     if mod == 0:
         for i in texto:
@@ -141,17 +117,14 @@ async def enter(event):
         if mod == 1:##the print state
             texto = champs2
             mod = 0
-        if (mod == 2):
+        if mod >= 2:
             mod = 0
     texta = texto
     await event.wait()
     event.clear()
 
+welcome()
 async def main():
-    evento = uasyncio.Event()
-    uasyncio.create_task(welcome(evento))
-    evento.set()
-    await uasyncio.sleep_ms(5000)
     while 1:
         uasyncio.create_task(display_oled(texto))
         uasyncio .create_task(check_keyboard())
