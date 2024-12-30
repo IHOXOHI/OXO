@@ -67,7 +67,6 @@ async def check_keyboard():
         pyb.LED(2).off()
         pyb.LED(3).off()
         moda += 1
-        print(moda)
         if moda == 4:
             moda = 1
         pyb.LED(moda).on()
@@ -91,15 +90,13 @@ async def check_keyboard():
                     texto  = texto + liste2[i]
                 if moda == 3:
                     texto  = texto + liste3[i]
-            if prime == 1:
+            else:
                 if moda == 1:
                     texto  = texto + liste4[i]
                 if moda == 2:
                     texto  = texto + liste5[i]
                 if moda == 3:
                     texto  = texto + liste6[i]
-            else:
-                vali = 'liste' + str(moda + 3)
 
 fil = open('tempo', 'w')
 fil.close()
