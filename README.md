@@ -1,2 +1,2 @@
 # OXO
-make a computer with a ucontroller and upython
+make a ucomputer with a ucontroller and upython
