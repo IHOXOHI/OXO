@@ -1,25 +1,14 @@
 from ssd1306 import SSD1306_I2C
 from machine import I2C, Pin
 import uasyncio
-from pyb import delay
+import  pyb
+#import const
 
-i2c = I2C(2)
+i2c = I2C(1)
 oled = SSD1306_I2C(128,64,i2c)
-def welcome():
-    oled.fill(0)
-    oled.text('WELCOME', 30,5)
-    oled.text('GIGA1 is Ready.', 2,25)
-    oled.show()
-    delay(2000)
 
-##severals variables
-##locals
-name_session= "@GIGA1:"
-##globals
-texto = ""
-texta = ""
-champs1 = ""
-champs2 = ""
+name_session = "@GIGA1:"
+#name_session = const("@GIGA1:")
 
 async def display_oled(texto):
     texto = str(texto)
@@ -28,25 +17,89 @@ async def display_oled(texto):
     oled.text(texto, 2, 22)
     oled.show()
 
-###Keyboard
-Penter = Pin('PB4', Pin.IN, Pin.PULL_UP)
-Ptest = Pin('PD13', Pin.IN,  Pin.PULL_UP)
-Ptest1 = Pin('PA7', Pin.IN,  Pin.PULL_UP)
+###Keyboard #right
+Penter = Pin('PG13', Pin.IN, Pin.PULL_UP)#index
+Pmode = Pin('PJ12', Pin.IN,  Pin.PULL_UP)#pouce
+Pspace = Pin('PJ0', Pin.IN,  Pin.PULL_UP)#majeur
+Pdel = Pin('PG12', Pin.IN,  Pin.PULL_UP)#annulaire
+Pp = Pin('PJ1', Pin.IN,  Pin.PULL_UP)#auriculaire
+#left
+P0 = Pin('PK2', Pin.IN,  Pin.PULL_UP)
+P1 = Pin('PG7', Pin.IN,  Pin.PULL_UP)
+P2 = Pin('PI11', Pin.IN,  Pin.PULL_UP)
+P3 = Pin('PE5', Pin.IN,  Pin.PULL_UP)
+P4 = Pin('PK0', Pin.IN,  Pin.PULL_UP)
+P5 = Pin('PE4', Pin.IN,  Pin.PULL_UP)
+P6 = Pin('PH15', Pin.IN,  Pin.PULL_UP)
+P7 = Pin('PG10', Pin.IN,  Pin.PULL_UP)
+P8 = Pin('PI13', Pin.IN,  Pin.PULL_UP)
+P9 = Pin('PI15', Pin.IN,  Pin.PULL_UP)
+P10 = Pin('PI10', Pin.IN,  Pin.PULL_UP)
+P11 = Pin('PE6', Pin.IN,  Pin.PULL_UP)
+P12 = Pin('PK7', Pin.IN,  Pin.PULL_UP)
+P13 = Pin('PI14', Pin.IN,  Pin.PULL_UP)
+P14 = Pin('PJ6', Pin.IN,  Pin.PULL_UP)
 
+#variables globals
+texto = ""
+texta = ""
+champs1 = ""
+champs2 = ""
+moda = 1
+prime = 0
 
 async def check_keyboard():
-    global texto
-    ###basics commands
+    global texto, moda, prime
+    liste1 = ['a','b','c','d','e','f','g','h','i','j','k','z','m','/',',']
+    liste2 = ['n','o','p','q','r','s','t','u','v','w','x','y','z',':','.']
+    liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*','!','=']
+    liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
+    liste5 = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']']
+    liste6 = ['0','1','2','3','4','5','6','7','8','9','+','-','*','!','=']
+
     if Penter.value() == 0:
+        print('penter')
         event = uasyncio.Event()
         uasyncio.create_task(enter(event))
         event.set()
+    if Pmode.value() == 0:
+        pyb.LED(1).off()
+        pyb.LED(2).off()
+        pyb.LED(3).off()
+        moda += 1
+        print(moda)
+        if moda == 4:
+            moda = 1
+        pyb.LED(moda).on()
+    if Pspace.value() == 0:
+        texto = texto + " "
+    if Pdel.value() == 0:
+        texto = texto[:-1]
+    if Pp.value() == 0:
+        prime += 1
+        if prime == 2:
+            prime = 0
 
-    ###tested commands
-    if Ptest.value() == 0:
-        texto = texto + "import pyb"
-    if Ptest1.value() == 0:
-        texto = texto + "pyb.LED(1).on()"
+    for i in range(15):
+        #key = 'P' + str(i)
+        key = eval('P' + str(i) + ".value()")
+        if key == 0:
+            if prime == 0:
+                if moda == 1:
+                    texto  = texto + liste1[i]
+                if moda == 2:
+                    texto  = texto + liste2[i]
+                if moda == 3:
+                    texto  = texto + liste3[i]
+            if prime == 1:
+                if moda == 1:
+                    texto  = texto + liste4[i]
+                if moda == 2:
+                    texto  = texto + liste5[i]
+                if moda == 3:
+                    texto  = texto + liste6[i]
+            else:
+                vali = 'liste' + str(moda + 3)
 
 fil = open('tempo', 'w')
 fil.close()
@@ -123,10 +176,9 @@ async def enter(event):
     await event.wait()
     event.clear()
 
-welcome()
 async def main():
     while 1:
         uasyncio.create_task(display_oled(texto))
         uasyncio .create_task(check_keyboard())
-        await uasyncio.sleep_ms(500)
+        await uasyncio.sleep_ms(400)
 uasyncio.run(main())
