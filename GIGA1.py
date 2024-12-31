@@ -76,7 +76,6 @@ async def check_keyboard():
         pyb.LED(moda).on()
     if Pspace.value() == 0:
         texto = texto + " "
-        #Pprime.toggle()
     if Pdel.value() == 0:
         texto = texto[:-1]
     if Pp.value() == 0:
@@ -108,8 +107,6 @@ fil = open('tempo', 'w')
 fil.close()
 mod = 0
 
-liste_function = ["if", "for", "while"]
-
 async def enter(event):
     global texto, texta, champs1, champs2, fil, mod
     if mod == 2:
@@ -120,23 +117,23 @@ async def enter(event):
         else:
             fil.write(texto)
 
-    if texta == texto: #to clean the display with enter touch
+    if texta == texto: #to clean the display with just the enter touch
         texto = ""
     if texto[:5] == "print":
         mod = 1
-    if texto[:2] == "if":
+    if texto[:2] == "if": ###if there is more than one print only the first one pass...
         fil = open('tempo', 'w')
         fil.write('texto')
         mod = 2
-    if texto[:3] == "for":
+    if texto[:3] == "for": ###if there is more than one print only the first one pass...
         fil = open('tempo', 'w')
         fil.write('texto')
         mod = 2
-    if texto[:5] == "while":
+    if texto[:5] == "while": ###if there is more than one print only the first one pass...
         fil = open('tempo', 'w')
         fil.write('texto')
         mod = 2
-    if texto[:6] == "import":
+    if texto[:6] == "import": ##to do 'from something import athing'
         textu = texto[7:]
         fil = open('fil', 'w')
         fil.write(texto[7:])
@@ -144,9 +141,8 @@ async def enter(event):
         import export
         if textu == 'myscript':
             import myscript #which is placed your lib folder
-        if textu == 'redi':
-            import redi
         texto = ""
+
     if mod == 0:
         for i in texto:
             if i == '=':
@@ -172,6 +168,7 @@ async def enter(event):
                     pass
                 texto = ""
                 globals()[champs1] = champs2
+
     if texto != "":
         if mod == 0:
             print(texto)
