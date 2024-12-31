@@ -2,24 +2,29 @@ from ssd1306 import SSD1306_I2C
 from machine import I2C, Pin
 import uasyncio
 import  pyb
-#import const
+from micropython import const
 
 i2c = I2C(1)
 oled = SSD1306_I2C(128,64,i2c)
 
-name_session = "@GIGA1:"
-#name_session = const("@GIGA1:")
-
+name_session = const("@GIGA1:")
+punto = 0
 async def display_oled(texto):
-    texto = str(texto)
+    global punto
+    if punto:
+        texto = str(texto) + "|"
+        punto = 0
+    else:
+        texto = str(texto)
+        punto = 1
     oled.fill(0)
     oled.text(name_session, 2,2)
     oled.text(texto, 2, 22)
     oled.show()
 
 ###Keyboard #right
-Penter = Pin('PG13', Pin.IN, Pin.PULL_UP)#index
-Pmode = Pin('PJ12', Pin.IN,  Pin.PULL_UP)#pouce
+Penter = Pin('PJ12', Pin.IN, Pin.PULL_UP)#index
+Pmode = Pin('PG13', Pin.IN,  Pin.PULL_UP)#pouce
 Pspace = Pin('PJ0', Pin.IN,  Pin.PULL_UP)#majeur
 Pdel = Pin('PG12', Pin.IN,  Pin.PULL_UP)#annulaire
 Pp = Pin('PJ1', Pin.IN,  Pin.PULL_UP)#auriculaire
@@ -40,47 +45,48 @@ P12 = Pin('PK7', Pin.IN,  Pin.PULL_UP)
 P13 = Pin('PI14', Pin.IN,  Pin.PULL_UP)
 P14 = Pin('PJ6', Pin.IN,  Pin.PULL_UP)
 
-#variables globals
 texto = ""
 texta = ""
 champs1 = ""
 champs2 = ""
 moda = 1
 prime = 0
+Pprime = Pin('PA7', Pin.OUT)
+
 
 async def check_keyboard():
     global texto, moda, prime
-    liste1 = ['a','b','c','d','e','f','g','h','i','j','k','z','m','/',',']
+    liste1 = ['a','b','c','d','e','f','g','h','i','j','k','l','m','/',',']
     liste2 = ['n','o','p','q','r','s','t','u','v','w','x','y','z',':','.']
-    liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*','!','=']
+    liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*',"'",'=']
     liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
     liste5 = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']']
-    liste6 = ['0','1','2','3','4','5','6','7','8','9','+','-','*','!','=']
+    liste6 = [';','!','?','>','<','#','_','{','}','@','k','`','%','\"',"&"]
 
     if Penter.value() == 0:
-        print('penter')
         event = uasyncio.Event()
         uasyncio.create_task(enter(event))
         event.set()
     if Pmode.value() == 0:
-        pyb.LED(1).off()
-        pyb.LED(2).off()
-        pyb.LED(3).off()
+        for i in range(1,4,1):
+            pyb.LED(i).off()
         moda += 1
         if moda == 4:
             moda = 1
         pyb.LED(moda).on()
     if Pspace.value() == 0:
         texto = texto + " "
+        #Pprime.toggle()
     if Pdel.value() == 0:
         texto = texto[:-1]
     if Pp.value() == 0:
-        prime += 1
-        if prime == 2:
+        if prime:
             prime = 0
-
+            Pprime.off()
+        else:
+            prime = 1
+            Pprime.on()
     for i in range(15):
-        #key = 'P' + str(i)
         key = eval('P' + str(i) + ".value()")
         if key == 0:
             if prime == 0:
@@ -90,7 +96,7 @@ async def check_keyboard():
                     texto  = texto + liste2[i]
                 if moda == 3:
                     texto  = texto + liste3[i]
-            else:
+            if prime == 1:
                 if moda == 1:
                     texto  = texto + liste4[i]
                 if moda == 2:
@@ -102,8 +108,10 @@ fil = open('tempo', 'w')
 fil.close()
 mod = 0
 
+liste_function = ["if", "for", "while"]
+
 async def enter(event):
-    global texto, texta, champs1, champs2, fil, mod, module1
+    global texto, texta, champs1, champs2, fil, mod
     if mod == 2:
         if texto == "":
             fil.close()
@@ -112,7 +120,7 @@ async def enter(event):
         else:
             fil.write(texto)
 
-    if texta == texto:
+    if texta == texto: #to clean the display with enter touch
         texto = ""
     if texto[:5] == "print":
         mod = 1
@@ -120,15 +128,22 @@ async def enter(event):
         fil = open('tempo', 'w')
         fil.write('texto')
         mod = 2
+    if texto[:3] == "for":
+        fil = open('tempo', 'w')
+        fil.write('texto')
+        mod = 2
+    if texto[:5] == "while":
+        fil = open('tempo', 'w')
+        fil.write('texto')
+        mod = 2
     if texto[:6] == "import":
         textu = texto[7:]
-        if textu == 'pyb':
-            fil = open('tempo', 'w')
-            fil.write('pyb')
-            fil.close()
-            import export
+        fil = open('fil', 'w')
+        fil.write(texto[7:])
+        fil.close()
+        import export
         if textu == 'myscript':
-            import myscript ##which is in the lib folder
+            import myscript #which is placed your lib folder
         if textu == 'redi':
             import redi
         texto = ""
@@ -155,16 +170,14 @@ async def enter(event):
                     champs2 = int(champs2)
                 except:
                     pass
-                #print("champs1={}\nchamsp2={}".format(champs1,champs2))##for debug
                 texto = ""
                 globals()[champs1] = champs2
-    ###save if necessary and send the result on the screen
     if texto != "":
         if mod == 0:
             print(texto)
             com = eval(texto)
-            texto = com
-        if mod == 1:##the print state
+            texto = str(com)
+        if mod == 1:
             texto = champs2
             mod = 0
         if mod >= 2:
