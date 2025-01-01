@@ -77,6 +77,7 @@ async def check_keyboard():
     if Pspace.value() == 0:
         texto = texto + " "
     if Pdel.value() == 0:
+        texto = str(texto)
         texto = texto[:-1]
     if Pp.value() == 0:
         if prime:
@@ -109,6 +110,10 @@ mod = 0
 
 async def enter(event):
     global texto, texta, champs1, champs2, fil, mod
+    try:
+        texto = str(texto)
+    except:
+        pass
     if mod == 2:
         if texto == "":
             fil.close()
@@ -116,12 +121,15 @@ async def enter(event):
             import fil
         else:
             fil.write(texto)
+    if mod == 3:
+        if texto == "":
+            fil.close()
+            mod = 0
+            #import biport
+        else:
+            fil.write(texto)
 
-    if texta == texto: #to clean the display with just the enter touch
-        texto = ""
-    if texto[:5] == "print":
-        mod = 1
-    if texto[:2] == "if": ###if there is more than one print only the first one pass...
+    if texto[:2] == "if": ###if there is more than one print
         fil = open('tempo', 'w')
         fil.write('texto')
         mod = 2
@@ -135,13 +143,16 @@ async def enter(event):
         mod = 2
     if texto[:6] == "import": ##to do 'from something import athing'
         textu = texto[7:]
-        fil = open('fil', 'w')
-        fil.write(texto[7:])
-        fil.close()
-        import export
-        if textu == 'myscript':
-            import myscript #which is placed your lib folder
-        texto = ""
+        if textu == 'redi':
+            import redi  #which is placed your lib folder
+        else:
+            fil = open('fil', 'w')
+            fil.write(texto[7:])
+            fil.close()
+            import export
+            #except:
+               # print('No module named {}'.format(texto|7:]))
+        texto =  ""
 
     if mod == 0:
         for i in texto:
@@ -169,6 +180,9 @@ async def enter(event):
                 texto = ""
                 globals()[champs1] = champs2
 
+    if texto[:5] == "print":
+        mod = 1
+
     if texto != "":
         if mod == 0:
             print(texto)
@@ -187,5 +201,5 @@ async def main():
     while 1:
         uasyncio.create_task(display_oled(texto))
         uasyncio .create_task(check_keyboard())
-        await uasyncio.sleep_ms(400)
+        await uasyncio.sleep_ms(421)
 uasyncio.run(main())
