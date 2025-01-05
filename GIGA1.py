@@ -1,9 +1,12 @@
+import machine
+import pyb
 from machine import I2C, Pin, SPI
 from ST77352 import TFT
 from seriffont import seriffont
-import uasyncio
-from pyb import LED
+from time import sleep_ms
+import os
 import shell_commands as sc
+
 
 spi = SPI(1, baudrate=20000000)
 tft=TFT(spi,Pin('PG9'),Pin('PE5'),Pin('PG7'))
@@ -14,7 +17,7 @@ name_session= "@GIGA1:"
 punto = 0
 texto = ""
 
-async def tft_display(texto):
+def tft_display(texto):
     global punto
     if punto:
         texto = str(texto) + "|"
@@ -57,27 +60,25 @@ moda = 1
 prime = 0
 Pprime = Pin('PA7', Pin.OUT)
 
-async def check_keyboard():
+def check_keyboard():
     global texto, moda, prime
     liste1 = ["sc.view('tempo.py', 3)","sc.cp('tempo.py', 'prout')","sc.view('prout', 3)",'d','e','f','g','h','i','j','k','l','m','/',',']
-    liste2 = ['n','o','p','q','r','s','t','u','v','w','x','y','z',':','.']
+    liste2 = ["print('tempo.py')","sc.count('tempo.py')",'p','q','r','s','t','u','v','w','x','y','z',':','.']
     liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*',"'","="]
     liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
     liste5 = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']']
     liste6 = [';','!','?','>','<','#','_','{','}','@','k','`','%','\"',"&"]
 
     if Penter.value() == 0:
-        event = uasyncio.Event()
-        uasyncio.create_task(enter(event))
-        event.set()
+        enter()
     if Pmode.value() == 0:
-        LED(1).off()
-        LED(2).off()
-        LED(3).off()
+        pyb.LED(1).off()
+        pyb.LED(2).off()
+        pyb.LED(3).off()
         moda +=1
         if moda == 4:
             moda = 1
-        LED(moda).on()
+        pyb.LED(moda).on()
     if Pspace.value() == 0:
         texto = texto + " "
     if Pdel.value() == 0:
@@ -110,13 +111,16 @@ async def check_keyboard():
                 else:
                     texto = texto + liste3[i]
 
-
-async def enter(event):
-    global texto, texta, champs1, champs2
+modo = 0
+file = ""
+def enter():
+    global texto, texta, champs1, champs2, modo, fi
     texto = str(texto)
     if texta == texto:
         texto = ""
-
+    if texto[:5] == 'print':
+        fi = texto[6:-1]
+        modo = 1
     if texto[:6] == "import":
         textu = texto[7:]
         try:
@@ -159,12 +163,40 @@ async def enter(event):
         texto = com
     texta = texto
 
-    await event.wait()
-    event.clear()
 
-async def main():
+def tft_display2(fi):
+    global modo, texto
+    #count = int(sc.count(fi))
+    fi = open('tempo.py', 'r')
+    ligne = fi.readline()
+    tft.fill(tft.WHITE)
+    nb = 1
+    nl = 1
+    while ligne != "":
+        ligne = str(nl) + ' ' + ligne
+        if len(ligne) > 15:
+            ligne1 = ligne[:15]
+            ligne2 = ligne[15:]
+            tft.text((5, nb), ligne1,tft.BLACK, seriffont, 2, nowrap=True)
+            nb += 15
+            tft.text((5, nb), ligne2,tft.BLACK, seriffont, 2, nowrap=True)
+        else:
+            tft.text((5, nb), ligne,tft.BLACK, seriffont, 2, nowrap=True)
+        ligne = fi.readline()
+        nb += 15
+        nl += 1
+    fi.close()
+    if modo == 1:
+        if Penter.value() == 0:
+            modo = 0
+            texto = ""
+def main():
+    global modo
     while 1:
-        uasyncio.create_task(tft_display(texto))
-        uasyncio .create_task(check_keyboard())
-        await uasyncio.sleep_ms(500)
-uasyncio.run(main())
+        if modo == 0:
+            tft_display(texto)
+        else:
+            tft_display2(file)
+        check_keyboard()
+        sleep_ms(500)
+main()
