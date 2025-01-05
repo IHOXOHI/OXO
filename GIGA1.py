@@ -186,7 +186,7 @@ async def tft_display2(fi):#the name of the file dosen't pass???
         while nl != L2:
             ligne = str(nl) + ' ' + ligne
             if len(ligne) > 15:
-                ligne1 = str(nl) + ' ' + ligne[:15]
+                ligne1 = ligne[:15]
                 ligne2 = ligne[15:]
                 tft.text((5, nb), ligne1,tft.BLACK, seriffont, 2, nowrap=True)
                 nb += 15
