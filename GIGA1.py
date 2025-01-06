@@ -1,31 +1,35 @@
-#importants libs
+#importants lib
 import machine
 import pyb
-from micropython import const
-#display
+import os
+import uasyncio
+#display lib
 from ST77352 import TFT
 from seriffont import seriffont
-#optional
+#optional lib
 import shell_commands as sc
-import uasyncio
+from micropython import const
 
-# display dimensions:
-#width = const(128) #no necessary for moment
-#height = const(128) #no necessary for moment
-height_step = const(15)
-step_start = const(30)
+##############################
 
 spi = machine.SPI(1, baudrate=20000000)
 tft=TFT(spi,machine.Pin('PG9'),machine.Pin('PE5'),machine.Pin('PG7'))
 tft.initr()
 tft.rotation(0)
 
+###variables for display correctly
+# display dimensions: 1.3"
+#width = const(128) #no necessary for moment
+#height = const(128) #no necessary for moment
+height_step = const(15)
+step_start = const(30)
+
 punto = 0
 texto = ""
 modo = 0
 
 async def tft_display(texto):
-    global punto, modo
+    global punto
     tft.fill(tft.WHITE)
     if punto:
         texto = str(texto) + "|"
@@ -33,7 +37,7 @@ async def tft_display(texto):
     else:
         texto = str(texto)
         punto = 1
-    if len(texto) > height_step: #height_step is the same of (128 / space_letter = 15 in my case)
+    if len(texto) > 17: # 15 is the same of (128 / space_letter = 15 in my case)... it depend of the scale...
         texto1 = texto[:height_step]
         tft.text((5, step_start), texto1,tft.BLACK, seriffont, 2, nowrap=True)
         texto2 = texto[height_step:]
@@ -74,18 +78,18 @@ P12 = machine.Pin('PI14', machine.Pin.IN, machine.Pin.PULL_UP)
 P13 = machine.Pin('PJ7', machine.Pin.IN, machine.Pin.PULL_UP)
 P14 = machine.Pin('PJ6', machine.Pin.IN, machine.Pin.PULL_UP)
 
-
+Pprime = machine.Pin('PA7', machine. Pin.OUT) #to have a second list of choice on the keyboard
+prime = 0
+#to have a return on the screen, correctly, but be carefull with others variables inside new function
 texta = ""
 champs1 = ""
 champs2 = ""
 moda = 1
-prime = 0
-Pprime = machine.Pin('PA7', machine. Pin.OUT)
 
 async def check_keyboard():
     global texto, moda, prime
-    liste1 = ["sc.view('tempo.py', 5)","sc.cp('tempo.py', 'prout.py','3','        prout')","sc.view('prout.py', 179)",'d','e','f','g','h','i','j','k','l','m','/',',']
-    liste2 = ["print('tempo.py')","sc.count('tempo.py')",'p','q','r','s','t','u','v','w','x','y','z',':','.']
+    liste1 = ["sc.view('tempo.py', 4 )","sc.cp('main.py', 'prout.py','201','        L1,L2 = 1, 5')","sc.view('prout.py', 201)",'d','e','f','g','h','i','j','k','l','m','/',',']
+    liste2 = ["print('main.py')","sc.count('tempo.py')",'p','q','r','s','t','u','v','w','x','y','z',':','.']
     liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*',"'","="]
     liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
     liste5 = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']']
@@ -135,28 +139,30 @@ async def check_keyboard():
                 else:
                     texto = texto + liste3[i]
 modo = 0
-fi = ""
-L1=1
-async def enter(event):
-    global texto, texta, champs1, champs2, modo, fi, L1
+async def enter(event): #key ENTER
+    global texto, texta, champs1, champs2, modo
     texto = str(texto)
-    if texta == texto:
+    if texta == texto: #to clean the screen with the enter key
         texto = ""
-    if texto[:5] == 'print': #less than 10 pages
+    if texto[:5] == 'view': #you have to indicate the name of the file and  which lines below (line with "L1, L2 = 1, 10"). You can do it with a sc.cp(...) command.
         modo = 1
+    if texto[:5] == 'print':
+        texto = texto[5:-1]
     if modo == 0:
-        if texto[:6] == "import":
+        if texto[:6] == "import": #you can add a module to the import list of this file with a sc.cp command(eg: "sc.md('main.py',1,'import network')
             textu = texto[7:]
             try:
                 if textu == 'sh':
                     import shell_commands as sh
-                if textu == 'redi':
+                if textu == 'redi': #you have to add this module in your lib folder
                     import redi
                 texto = ""
             except:
                 texto = 'no modules named: ' + textu
 
         for i in texto:
+            if texto[:5] == 'sc.cp':
+                break # No way for a \, and to skip if there is a '=' in a command
             if i == '=':
                 pl_egal = texto.index(i)
                 champs1 = texto[0:pl_egal]
@@ -180,15 +186,10 @@ async def enter(event):
                 texto = ""
                 globals()[champs1] = champs2
 
+        texta = texto
         if texto != "":
-            print(texto, texto[:5])
-        #    if texto[:5] == 'sc.cp': # I don't understand why it works when I use repl and not there?
-         #       eval(texto)
-          #      texto = "Done."
-           # else:
             com = eval(texto)
             texto = com
-        texta = texto
     await event.wait()
     event.clear()
 
@@ -196,10 +197,9 @@ async def tft_display2():
     global modo, texto
     if modo == 1:
         modo = 2
-        L1 = 1
-        L2 = 10
-        file = 'tempo.py'
-        fi = open('tempo.py', 'r')
+        L1, L2 = 1, 10
+        file = 'main.py'
+        fi = open(file, 'r')
         ligne = fi.readline()
         tft.fill(tft.WHITE)
         nl = 1
