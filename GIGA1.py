@@ -78,7 +78,7 @@ P12 = machine.Pin('PI14', machine.Pin.IN, machine.Pin.PULL_UP)
 P13 = machine.Pin('PJ7', machine.Pin.IN, machine.Pin.PULL_UP)
 P14 = machine.Pin('PJ6', machine.Pin.IN, machine.Pin.PULL_UP)
 
-Pprime = machine.Pin('PA7', machine. Pin.OUT) #to have a second list of choice on the keyboard
+Pprime = machine.Pin('PA7', machine. Pin.OUT) #a led to see the activation of the second list of choices on the keyboard
 prime = 0
 #to have a return on the screen, correctly, but be carefull with others variables inside new function
 texta = ""
@@ -146,14 +146,14 @@ async def enter(event): #key ENTER
         texto = ""
     if texto[:5] == 'view': #you have to indicate the name of the file and  which lines below (line with "L1, L2 = 1, 10"). You can do it with a sc.cp(...) command.
         modo = 1
-    if texto[:5] == 'print':
+    if texto[:5] == 'print': #maybe add an eval?
         texto = texto[5:-1]
     if modo == 0:
         if texto[:6] == "import": #you can add a module to the import list of this file with a sc.cp command(eg: "sc.md('main.py',1,'import network')
             textu = texto[7:]
             try:
-                if textu == 'sh':
-                    import shell_commands as sh
+                if textu == 'sc':
+                    import shell_commands as sc
                 if textu == 'redi': #you have to add this module in your lib folder
                     import redi
                 texto = ""
