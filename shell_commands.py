@@ -45,6 +45,7 @@ def md(ori,ch_lg=0, ch_txt=""):
     fil_des = open('tempo.py', "w")
     l = fil_ori.readline()
     n = 1
+    ch_txt = ch_txt + '\n'
     while l != "":
         if n == int(ch_lg):
             text = str(ch_txt)
