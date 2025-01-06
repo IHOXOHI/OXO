@@ -12,11 +12,12 @@ def view(ori,L=1):
     fil_ori.close()
     return l
 
-def cp(ori, des,ch_lg=0, ch_txt=""):
+def cp(ori, des,ch_lg=0, ch_txt="\n"):
     fil_ori = open(ori, "r")
     fil_des = open(des, "w")
     l = fil_ori.readline()
     n = 1
+    ch_txt = ch_txt + '\n'
     while l != "":
         if n == int(ch_lg):
             text = str(ch_txt)
@@ -37,7 +38,7 @@ def count(ori):
         n += 1
         l = fil_ori.readline()
     fil_ori.close()
-    return n
+    return str(n)
 
 def md(ori,ch_lg=0, ch_txt=""):
     fil_ori = open(ori, "r")
