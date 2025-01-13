@@ -17,9 +17,9 @@ def cp(ori, des,ch_lg=0, ch_txt="\n"):
     fil_des = open(des, "w")
     l = fil_ori.readline()
     n = 1
-    ch_txt = ch_txt + '\n'
+    ch_txt = ch_txt + '\n' + "\n"
     while l != "":
-        if n == int(ch_lg):
+        if str(n) == ch_lg:
             text = str(ch_txt)
         else:
             text = str(l)
@@ -40,24 +40,24 @@ def count(ori):
     fil_ori.close()
     return str(n)
 
-def md(ori,ch_lg=0, ch_txt=""):
+def md(ori,ch_lg=0, ch_txt="\n"):
     fil_ori = open(ori, "r")
-    fil_des = open('tempo.py', "w")
+    fil_des = open('temp_fil.py', "w")
     l = fil_ori.readline()
     n = 1
-    ch_txt = ch_txt + '\n'
     while l != "":
         if n == int(ch_lg):
-            text = str(ch_txt)
+            text = str(ch_txt) +  "\n" + "\n" ## it works like this????
+            fil_des.write(text)
         else:
             text = str(l)
-        fil_des.write(text)
+            fil_des.write(text)
         l = fil_ori.readline()
         n += 1
     fil_ori.close()
     fil_des.close()
 
-    fil_ori = open('tempo.py', "r")
+    fil_ori = open('temp_fil.py', "r")
     fil_des = open(ori, "w")
     l = fil_ori.readline()
     n = 1
@@ -72,5 +72,5 @@ def md(ori,ch_lg=0, ch_txt=""):
     fil_ori.close()
     fil_des.close()
 
-    os.remove('tempo.py')
-    return "ok"
+    os.remove('temp_fil.py')
+    return 1
