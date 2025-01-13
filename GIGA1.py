@@ -4,56 +4,54 @@ import pyb
 import os
 import uasyncio
 #display lib
-from ST77352 import TFT
-from seriffont import seriffont
+from ssd1306 import SSD1306_I2C
 #optional lib
 import shell_commands as sc
 from micropython import const
 
-##############################
-
-spi = machine.SPI(1, baudrate=20000000)
-tft=TFT(spi,machine.Pin('PG9'),machine.Pin('PE5'),machine.Pin('PG7'))
-tft.initr()
-tft.rotation(0)
+#############  I2C for oled display
+i2c = machine.I2C(1)
+oled = SSD1306_I2C(128,64,i2c)
 
 ###variables for display correctly
-# display dimensions: 1.3"
+# display dimensions: 0.96"
 #width = const(128) #no necessary for moment
 #height = const(128) #no necessary for moment
-height_step = const(15)
-step_start = const(30)
+width_screen = const(15)
+step_start = const(5)
+height_step = const(10)
 
 punto = 0
 texto = ""
 modo = 0
 
-async def tft_display(texto):
+async def oled_display(texto):
     global punto
-    tft.fill(tft.WHITE)
+    oled.fill(0)
     if punto:
         texto = str(texto) + "|"
         punto = 0
     else:
         texto = str(texto)
         punto = 1
-    if len(texto) > 17: # 15 is the same of (128 / space_letter = 15 in my case)... it depend of the scale...
-        texto1 = texto[:height_step]
-        tft.text((5, step_start), texto1,tft.BLACK, seriffont, 2, nowrap=True)
-        texto2 = texto[height_step:]
+    if len(texto) > width_screen: # 17 is nearly the same of (128 / space_letter = 17 in my case)... it depend of the scale...
+        texto1 = texto[:width_screen]
+        oled.text(texto1, 5, step_start , 1)
+        texto2 = texto[width_screen:]
         tt = step_start + height_step
-        tft.text((5, tt), texto2,tft.BLACK, seriffont, 2, nowrap=True)
-    if len(texto) > (height_step*2):
-        texto1 = texto[:height_step]
-        tft.text((5, step_start), texto1,tft.BLACK, seriffont, 2, nowrap=True)
+        oled.text(texto2, 5, tt, 1)
+    if len(texto) > (width_screen*2):
+        texto1 = texto[:width_screen]
+        oled.text(texto1, 5, step_start , 1)
         tt = step_start + height_step
         texto2 = texto[height_step:tt]
-        tft.text((5, tt), texto2,tft.BLACK, seriffont, 2, nowrap=True)
+        oled.text(texto2, 5, tt, 1)
         tt = tt + height_step
         texto3 = texto[tt:]
-        tft.text((5, tt), texto3,tft.BLACK, seriffont, 2, nowrap=True)
+        oled.text(texto3, 5, tt, 1)
     else:
-        tft.text((5, step_start), texto,tft.BLACK, seriffont, 2, nowrap=True)
+        oled.text(texto, 5, step_start , 1)
+    oled.show()
 
 #Keyboard right
 Penter = machine.Pin('PJ12', machine.Pin.IN, machine.Pin.PULL_UP)
@@ -78,7 +76,7 @@ P12 = machine.Pin('PI14', machine.Pin.IN, machine.Pin.PULL_UP)
 P13 = machine.Pin('PJ7', machine.Pin.IN, machine.Pin.PULL_UP)
 P14 = machine.Pin('PJ6', machine.Pin.IN, machine.Pin.PULL_UP)
 
-Pprime = machine.Pin('PA7', machine. Pin.OUT) #a led to see the activation of the second list of choices on the keyboard
+Pprime = machine.Pin('PB4', machine. Pin.OUT) #to have a second list of choice on the keyboard
 prime = 0
 #to have a return on the screen, correctly, but be carefull with others variables inside new function
 texta = ""
@@ -88,8 +86,8 @@ moda = 1
 
 async def check_keyboard():
     global texto, moda, prime
-    liste1 = ["sc.view('tempo.py', 4 )","sc.cp('main.py', 'prout.py','201','        L1,L2 = 1, 5')","sc.view('prout.py', 201)",'d','e','f','g','h','i','j','k','l','m','/',',']
-    liste2 = ["print('main.py')","sc.count('tempo.py')",'p','q','r','s','t','u','v','w','x','y','z',':','.']
+    liste1 = ["sc.view",'b','c','d','e','f','g','h','i','j','k','l','m','/',',']
+    liste2 = ['n','o','p','q','r','s','t','u','v','w','x','y','z',':','.']
     liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*',"'","="]
     liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
     liste5 = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']']
@@ -139,22 +137,21 @@ async def check_keyboard():
                 else:
                     texto = texto + liste3[i]
 modo = 0
-async def enter(event): #key ENTER
+async def enter(event):
     global texto, texta, champs1, champs2, modo
     texto = str(texto)
-    if texta == texto: #to clean the screen with the enter key
+    if texta == texto:
         texto = ""
-    if texto[:5] == 'view': #you have to indicate the name of the file and  which lines below (line with "L1, L2 = 1, 10"). You can do it with a sc.cp(...) command.
-        modo = 1
-    if texto[:5] == 'print': #maybe add an eval?
+    if texto[:5] == 'print':
         texto = texto[5:-1]
+    if texto[:7] == 'sc.view':
+        modo = 1
+        print('enter in mode 1')
     if modo == 0:
-        if texto[:6] == "import": #you can add a module to the import list of this file with a sc.cp command(eg: "sc.md('main.py',1,'import network')
+        if texto[:6] == "import":
             textu = texto[7:]
             try:
-                if textu == 'sc':
-                    import shell_commands as sc
-                if textu == 'redi': #you have to add this module in your lib folder
+                if textu == 'redi':
                     import redi
                 texto = ""
             except:
@@ -162,7 +159,7 @@ async def enter(event): #key ENTER
 
         for i in texto:
             if texto[:5] == 'sc.cp':
-                break # No way for a \, and to skip if there is a '=' in a command
+                break
             if i == '=':
                 pl_egal = texto.index(i)
                 champs1 = texto[0:pl_egal]
@@ -193,32 +190,34 @@ async def enter(event): #key ENTER
     await event.wait()
     event.clear()
 
-async def tft_display2():
+async def oled_display2():
     global modo, texto
     if modo == 1:
         modo = 2
-        L1, L2 = 1, 10
-        file = 'main.py'
+        L1, L2 = 3, 7
+        file = 'tempo.py'
         fi = open(file, 'r')
+        print('fil is open')
         ligne = fi.readline()
-        tft.fill(tft.WHITE)
+        oled.fill(0)
         nl = 1
-        place = height_step
+        place = step_start
         while nl != L1:
             ligne = fi.readline()
+            nl += 1
         while nl != L2:
-            ligne = str(nl) + ' ' + ligne
-            if len(ligne) > height_step:
-                ligne1 = ligne[:height_step]
-                tft.text((5, place), ligne1,tft.BLACK, seriffont, 2, nowrap=True)
-                ligne2 = ligne[height_step:]
+            if len(ligne) > width_screen:
+                ligne1 = ligne[:width_screen]
+                oled.text(ligne1, 5, place, 1)
+                ligne2 = ligne[width_screen:]
                 place = place + height_step
-                tft.text((5, place), ligne2,tft.BLACK, seriffont, 2, nowrap=True)
+                oled.text(ligne2, 5, place, 1)
             else:
-                tft.text((5, place), ligne,tft.BLACK, seriffont, 2, nowrap=True)
+                oled.text(ligne, 5, place, 1)
                 place = place + height_step
             ligne = fi.readline()
             nl += 1
+        oled.show()
         fi.close()
     if modo == 2:
         while modo == 2:
@@ -226,12 +225,13 @@ async def tft_display2():
                 modo = 0
                 texto = ""
             await uasyncio.sleep_ms(200)
+
 async def main():
     while 1:
         if modo == 0:
-            uasyncio.create_task(tft_display(texto))
-        else:
-            uasyncio.create_task(tft_display2())
+            uasyncio.create_task(oled_display(texto))
+        if modo == 1:
+            uasyncio.create_task(oled_display2())
         uasyncio.create_task(check_keyboard())
         await uasyncio.sleep_ms(500)
 uasyncio.run(main())
