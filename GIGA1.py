@@ -86,7 +86,7 @@ moda = 1
 
 async def check_keyboard():
     global texto, moda, prime
-    liste1 = ["sc.view",'b','c','d','e','f','g','h','i','j','k','l','m','/',',']
+    liste1 = ["sc.view","sc.md('main.py', '198','         file = str(test.py)')",'c','d','e','f','g','h','i','j','k','l','m','/',',']
     liste2 = ['n','o','p','q','r','s','t','u','v','w','x','y','z',':','.']
     liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*',"'","="]
     liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
@@ -140,13 +140,13 @@ modo = 0
 async def enter(event):
     global texto, texta, champs1, champs2, modo
     texto = str(texto)
+    print(texto, texto[:5])
     if texta == texto:
         texto = ""
     if texto[:5] == 'print':
         texto = texto[5:-1]
     if texto[:7] == 'sc.view':
         modo = 1
-        print('enter in mode 1')
     if modo == 0:
         if texto[:6] == "import":
             textu = texto[7:]
@@ -159,6 +159,8 @@ async def enter(event):
 
         for i in texto:
             if texto[:5] == 'sc.cp':
+                break
+            if texto[:5] == 'sc.md':
                 break
             if i == '=':
                 pl_egal = texto.index(i)
@@ -194,10 +196,9 @@ async def oled_display2():
     global modo, texto
     if modo == 1:
         modo = 2
-        L1, L2 = 3, 7
-        file = 'tempo.py'
-        fi = open(file, 'r')
-        print('fil is open')
+        L1, l2 = 200, 201
+        fil = 'main.py'
+        fi = open(fil, 'r')
         ligne = fi.readline()
         oled.fill(0)
         nl = 1
