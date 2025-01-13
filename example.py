@@ -6,7 +6,9 @@ a ###it return 5
 
 file = open('myfile', 'w')...
 
-sc.cp('main.py', 'test.py', 3, 'name=bob')
+sc.cp('main.py', 'test.py', '3', 'name=bob')
 sc.view #you have to indicate the name and which lignes in your main.py
 
-import test    #you have to add the ligne in your main.py, or place the file in your lib, to execute the file test.py
+import test    #you have to place the file in your lib and add the line to indicate this possible import in your main (you can too import directly a module by your main), to execute the file test.py
+
+Until now, no if, for, while, ..., functions, ...
