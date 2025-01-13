@@ -86,8 +86,8 @@ moda = 1
 
 async def check_keyboard():
     global texto, moda, prime
-    liste1 = ["sc.view","sc.md('main.py', '198','         file = str(test.py)')",'c','d','e','f','g','h','i','j','k','l','m','/',',']
-    liste2 = ['n','o','p','q','r','s','t','u','v','w','x','y','z',':','.']
+    liste1 = ["sc.view","sc.md('tempo.py', '5', 'import machine')",'c','d','e','f','g','h','i','j','k','l','m','/',',']
+    liste2 = ["c = 'jerome sellegri' ",'o','p','q','r','s','t','u','v','w','x','y','z',':','.']
     liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*',"'","="]
     liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
     liste5 = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']']
@@ -98,9 +98,8 @@ async def check_keyboard():
         uasyncio.create_task(enter(event))
         event.set()
     if Pmode.value() == 0:
-        pyb.LED(1).off()
-        pyb.LED(2).off()
-        pyb.LED(3).off()
+        for i in range(1,4):
+            pyb.LED(i).off()
         moda +=1
         if moda == 4:
             moda = 1
@@ -140,7 +139,7 @@ modo = 0
 async def enter(event):
     global texto, texta, champs1, champs2, modo
     texto = str(texto)
-    print(texto, texto[:5])
+    #print(texto, texto[:5])
     if texta == texto:
         texto = ""
     if texto[:5] == 'print':
@@ -196,8 +195,8 @@ async def oled_display2():
     global modo, texto
     if modo == 1:
         modo = 2
-        L1, l2 = 200, 201
-        fil = 'main.py'
+        L1, L2 = 5, 6
+        fil = 'tempo.py'
         fi = open(fil, 'r')
         ligne = fi.readline()
         oled.fill(0)
