@@ -6,8 +6,8 @@ a ###it return 5
 
 file = open('myfile', 'w')...
 
-sc.cp('main.py', 'test.py', '3', 'name=bob')
-sc.view #you have to indicate the name and which lignes in your main.py
+sc.cp('main.py', 'test.py', '3', 'name=bob') # copy main.py in test.py and change the line 3 by name=bob
+sc.view #you have to indicate the name and which lignes in your main.py... you can do it with a sc.cp command
 
 import test    #you have to place the file in your lib and add the line to indicate this possible import in your main (you can too import directly a module by your main), to execute the file test.py
 
