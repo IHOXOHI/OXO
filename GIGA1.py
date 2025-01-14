@@ -87,7 +87,7 @@ moda = 1
 async def check_keyboard():
     global texto, moda, prime
     liste1 = ["sc.view","sc.md('tempo.py', '5', 'import machine')",'c','d','e','f','g','h','i','j','k','l','m','/',',']
-    liste2 = ['n','o','p','q','r','s','t','u','v','w','x','y','z',':','.']
+    liste2 = ["c = 'jerome sellegri' ",'o','p','q','r','s','t','u','v','w','x','y','z',':','.']
     liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*',"'","="]
     liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
     liste5 = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']']
