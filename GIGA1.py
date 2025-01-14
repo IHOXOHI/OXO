@@ -1,4 +1,3 @@
-#importants lib
 import machine
 import pyb
 import os
@@ -13,10 +12,6 @@ from micropython import const
 i2c = machine.I2C(1)
 oled = SSD1306_I2C(128,64,i2c)
 
-###variables for display correctly
-# display dimensions: 0.96"
-#width = const(128) #no necessary for moment
-#height = const(128) #no necessary for moment
 width_screen = const(15)
 step_start = const(5)
 height_step = const(10)
@@ -34,7 +29,7 @@ async def oled_display(texto):
     else:
         texto = str(texto)
         punto = 1
-    if len(texto) > width_screen: # 17 is nearly the same of (128 / space_letter = 17 in my case)... it depend of the scale...
+    if len(texto) > width_screen:
         texto1 = texto[:width_screen]
         oled.text(texto1, 5, step_start , 1)
         texto2 = texto[width_screen:]
@@ -76,9 +71,9 @@ P12 = machine.Pin('PI14', machine.Pin.IN, machine.Pin.PULL_UP)
 P13 = machine.Pin('PJ7', machine.Pin.IN, machine.Pin.PULL_UP)
 P14 = machine.Pin('PJ6', machine.Pin.IN, machine.Pin.PULL_UP)
 
-Pprime = machine.Pin('PB4', machine. Pin.OUT) #to have a second list of choice on the keyboard
+Pprime = machine.Pin('PB4', machine. Pin.OUT)
 prime = 0
-#to have a return on the screen, correctly, but be carefull with others variables inside new function
+
 texta = ""
 champs1 = ""
 champs2 = ""
@@ -86,8 +81,8 @@ moda = 1
 
 async def check_keyboard():
     global texto, moda, prime
-    liste1 = ["sc.view","sc.md('tempo.py', '5', 'import machine')",'c','d','e','f','g','h','i','j','k','l','m','/',',']
-    liste2 = ["c = 'jerome sellegri' ",'o','p','q','r','s','t','u','v','w','x','y','z',':','.']
+    liste1 = ["if a == 5:","    a = 7",'c','d','e','f','g','h','i','j','k','l','m','/',',']
+    liste2 = ['a','o','p','q','r','s','t','u','v','w','x','y','z',':','.']
     liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*',"'","="]
     liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
     liste5 = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']']
@@ -136,16 +131,36 @@ async def check_keyboard():
                 else:
                     texto = texto + liste3[i]
 modo = 0
+string_variables = ""
+
 async def enter(event):
-    global texto, texta, champs1, champs2, modo
+    global texto, texta, champs1, champs2, modo, fil, string_variables
     texto = str(texto)
     #print(texto, texto[:5])
     if texta == texto:
         texto = ""
-    if texto[:5] == 'print':
-        texto = texto[5:-1]
     if texto[:7] == 'sc.view':
         modo = 1
+    if modo == 2:
+        if texto == "":
+            fil.write(string_variables)
+            fil.close()
+            modo = 0
+            import tempo
+        else:
+            for i in texto:
+                if i == "=":
+                    string_variables = string_variables + texto + "\n"
+            text = texto + '\n'
+            fil.write(text)
+            #if text[3:8] == 'print':
+             #   texto = "eval('texto[9:]')"
+    if texto[:2] == "if":
+        modo = 2
+        fil = open('tempo.py', 'w')
+        text = string_variables + '\n' + texto + '\n'
+        fil.write('texto')
+        texto = ""
     if modo == 0:
         if texto[:6] == "import":
             textu = texto[7:]
@@ -162,6 +177,7 @@ async def enter(event):
             if texto[:5] == 'sc.md':
                 break
             if i == '=':
+                string_variables = string_variables + texto + "\n"
                 pl_egal = texto.index(i)
                 champs1 = texto[0:pl_egal]
                 for i in champs1:
