@@ -1,21 +1,22 @@
 import machine
 import pyb
-import os
 import uasyncio
 #display lib
 from ssd1306 import SSD1306_I2C
 #optional lib
 import shell_commands as sc
 from micropython import const
+## for use variables between imported modules
+import VAR
 
 #############  I2C for oled display
 i2c = machine.I2C(1)
 oled = SSD1306_I2C(128,64,i2c)
-
+#screen configuration
 width_screen = const(15)
 step_start = const(5)
 height_step = const(10)
-
+#variables to display
 punto = 0
 texto = ""
 modo = 0
@@ -81,8 +82,8 @@ moda = 1
 
 async def check_keyboard():
     global texto, moda, prime
-    liste1 = ["if a == 5:","    a = 7",'c','d','e','f','g','h','i','j','k','l','m','/',',']
-    liste2 = ['a','o','p','q','r','s','t','u','v','w','x','y','z',':','.']
+    liste1 = ['a','b','c','d','e','f','g','h','i','j','k','l','m','/',',']
+    liste2 = ["va.ch('a', '5')","va.ifi('a', '5')",'p','q','r','s','t','u','v','w','x','y','z',':','.']
     liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*',"'","="]
     liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
     liste5 = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']']
@@ -131,43 +132,56 @@ async def check_keyboard():
                 else:
                     texto = texto + liste3[i]
 modo = 0
-string_variables = ""
+va = VAR.VA()
+vari = {}
 
 async def enter(event):
-    global texto, texta, champs1, champs2, modo, fil, string_variables
+    global texto, texta, champs1, champs2, modo, fil, vari
     texto = str(texto)
     #print(texto, texto[:5])
     if texta == texto:
         texto = ""
+    if texto == str(1):
+        texto = ""
+    if modo == 2:
+        texto = ""
+        modo = 0
+    if modo == 3:
+        if texto != "":
+            fil = open('IFI.py', 'a')
+            fil.write(texto)
+            fil.close()
+            texto = "    "
+        else:
+            import IFI
+            modo = 0
+
     if texto[:7] == 'sc.view':
         modo = 1
-    if modo == 2:
-        if texto == "":
-            fil.write(string_variables)
-            fil.close()
-            modo = 0
-            import tempo
-        else:
-            for i in texto:
-                if i == "=":
-                    string_variables = string_variables + texto + "\n"
-            text = texto + '\n'
-            fil.write(text)
-            #if text[3:8] == 'print':
-             #   texto = "eval('texto[9:]')"
-    if texto[:2] == "if":
+    if texto[:3] == 'VAR':
         modo = 2
-        fil = open('tempo.py', 'w')
-        text = string_variables + '\n' + texto + '\n'
-        fil.write('texto')
-        texto = ""
+    if texto[:2] == 'if':
+        #texto = texto[2:]
+        for i in texto:
+            if i == '=':
+                pl_egal = texto.index(i)
+                champs1 = texto[2:pl_egal]
+                pl_egal += 2
+                champs2 = texto[pl_egal:-1]
+                print(champs1, champs2)
+
+                va.ifi(champs1,champs2)
+                modo = 3
+                print(vari)
+                texto = "    "
+
     if modo == 0:
         if texto[:6] == "import":
             textu = texto[7:]
+            print('mode = 0')
             try:
                 if textu == 'redi':
                     import redi
-                texto = ""
             except:
                 texto = 'no modules named: ' + textu
 
@@ -177,7 +191,6 @@ async def enter(event):
             if texto[:5] == 'sc.md':
                 break
             if i == '=':
-                string_variables = string_variables + texto + "\n"
                 pl_egal = texto.index(i)
                 champs1 = texto[0:pl_egal]
                 for i in champs1:
@@ -197,6 +210,9 @@ async def enter(event):
                     champs2 = int(champs2)
                 except:
                     pass
+                vari[champs1] = champs2
+                va.ch(champs1,champs2)
+                print(vari)
                 texto = ""
                 globals()[champs1] = champs2
 
@@ -245,6 +261,8 @@ async def oled_display2():
 async def main():
     while 1:
         if modo == 0:
+            uasyncio.create_task(oled_display(texto))
+        if modo == 2:
             uasyncio.create_task(oled_display(texto))
         if modo == 1:
             uasyncio.create_task(oled_display2())
