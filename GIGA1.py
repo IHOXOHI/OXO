@@ -1,26 +1,18 @@
 import machine
 import pyb
 import uasyncio
-#display lib
 from ssd1306 import SSD1306_I2C
-#optional lib
 import shell_commands as sc
 from micropython import const
-## for use variables between imported modules
-import VAR
 
-#############  I2C for oled display
 i2c = machine.I2C(1)
 oled = SSD1306_I2C(128,64,i2c)
-#screen configuration
 width_screen = const(15)
 step_start = const(5)
 height_step = const(10)
-#variables to display
 punto = 0
 texto = ""
 modo = 0
-
 async def oled_display(texto):
     global punto
     oled.fill(0)
@@ -30,32 +22,48 @@ async def oled_display(texto):
     else:
         texto = str(texto)
         punto = 1
-    if len(texto) > width_screen:
-        texto1 = texto[:width_screen]
-        oled.text(texto1, 5, step_start , 1)
-        texto2 = texto[width_screen:]
-        tt = step_start + height_step
-        oled.text(texto2, 5, tt, 1)
-    if len(texto) > (width_screen*2):
-        texto1 = texto[:width_screen]
-        oled.text(texto1, 5, step_start , 1)
-        tt = step_start + height_step
-        texto2 = texto[height_step:tt]
-        oled.text(texto2, 5, tt, 1)
-        tt = tt + height_step
-        texto3 = texto[tt:]
-        oled.text(texto3, 5, tt, 1)
+
+    if (len(texto)) > width_screen:
+        text1 = texto[:width_screen]
+        oled.text(text1, 5, step_start , 1)
+        text2 = texto[width_screen:]
+        p1 = step_start + height_step
+        oled.text(text2, 5, p1 , 1)
+    if (len(texto)) > (width_screen * 2):
+        text1 = texto[:width_screen]
+        oled.text(text1, 5, step_start , 1)
+        t1 = width_screen *2
+        text2 = texto[width_screen:t1]
+        p1 = step_start + height_step
+        oled.text(text2, 5, p1 , 1)
+        text3 = texto[t1:]
+        p2 = step_start + (height_step * 2)
+        oled.text(text3, 5, p2 , 1)
+    if (len(texto)) > (width_screen * 3):
+        text1 = texto[:width_screen]
+        oled.text(text1, 5, step_start , 1)
+        t1 = width_screen *2
+        text2 = texto[width_screen:t1]
+        p1 = step_start + height_step
+        oled.text(text2, 5, p1 , 1)
+        t2 = width_screen *3
+        text3 = texto[t1:t2]
+        p2 = step_start + (height_step * 2)
+        oled.text(text3, 5, p2 , 1)
+        t3 = width_screen *4
+        text4 = texto[t2:]
+        p3 = step_start + (height_step * 3)
+        oled.text(text4, 5, p3 , 1)
     else:
         oled.text(texto, 5, step_start , 1)
     oled.show()
 
-#Keyboard right
+#keyboard
 Penter = machine.Pin('PJ12', machine.Pin.IN, machine.Pin.PULL_UP)
 Pmode = machine.Pin('PG13', machine.Pin.IN, machine.Pin.PULL_UP)
 Pspace = machine.Pin('PJ0', machine.Pin.IN, machine.Pin.PULL_UP)
 Pdel = machine.Pin('PG12', machine.Pin.IN, machine.Pin.PULL_UP)
 Pp = machine.Pin('PJ1', machine.Pin.IN, machine.Pin.PULL_UP)
-#left
 P0 = machine.Pin('PE5', machine.Pin.IN, machine.Pin.PULL_UP)
 P1 = machine.Pin('PI11', machine.Pin.IN, machine.Pin.PULL_UP)
 P2 = machine.Pin('PE4', machine.Pin.IN, machine.Pin.PULL_UP)
@@ -71,24 +79,21 @@ P11 = machine.Pin('PE6', machine.Pin.IN, machine.Pin.PULL_UP)
 P12 = machine.Pin('PI14', machine.Pin.IN, machine.Pin.PULL_UP)
 P13 = machine.Pin('PJ7', machine.Pin.IN, machine.Pin.PULL_UP)
 P14 = machine.Pin('PJ6', machine.Pin.IN, machine.Pin.PULL_UP)
-
 Pprime = machine.Pin('PB4', machine. Pin.OUT)
-prime = 0
 
+prime = 0
 texta = ""
 champs1 = ""
 champs2 = ""
 moda = 1
-
 async def check_keyboard():
     global texto, moda, prime
     liste1 = ['a','b','c','d','e','f','g','h','i','j','k','l','m','/',',']
-    liste2 = ["va.ch('a', '5')","va.ifi('a', '5')",'p','q','r','s','t','u','v','w','x','y','z',':','.']
+    liste2 = ["sc.view",'o','p','q','r','s','t','u','v','w','x','y','z',':','.']
     liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*',"'","="]
     liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
     liste5 = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']']
-    liste6 = [';','!','?','>','<','#','_','{','}','@','k','`','%','\"',"&"]
-
+    liste6 = [';','!','?','>','<','#','_','{','}','\"',"sc.md('main.py',188,\"        fil='IFI.py'\")",'`','%','', "sc.md('main.py', '167', '        L1,L2 = 3,6')"]
     if Penter.value() == 0:
         event = uasyncio.Event()
         uasyncio.create_task(enter(event))
@@ -111,7 +116,6 @@ async def check_keyboard():
         else:
             prime = 1
             Pprime.on()
-
     for i in range(15):
         key = eval('P' + str(i) + ".value()")
         if key == 0:
@@ -132,59 +136,24 @@ async def check_keyboard():
                 else:
                     texto = texto + liste3[i]
 modo = 0
-va = VAR.VA()
-vari = {}
-
 async def enter(event):
-    global texto, texta, champs1, champs2, modo, fil, vari
+    global texto, texta, champs1, champs2, modo
     texto = str(texto)
-    #print(texto, texto[:5])
+    print(texto)
     if texta == texto:
         texto = ""
-    if texto == str(1):
-        texto = ""
-    if modo == 2:
-        texto = ""
-        modo = 0
-    if modo == 3:
-        if texto != "":
-            fil = open('IFI.py', 'a')
-            fil.write(texto)
-            fil.close()
-            texto = "    "
-        else:
-            import IFI
-            modo = 0
-
     if texto[:7] == 'sc.view':
+        texto = ""
         modo = 1
-    if texto[:3] == 'VAR':
-        modo = 2
-    if texto[:2] == 'if':
-        #texto = texto[2:]
-        for i in texto:
-            if i == '=':
-                pl_egal = texto.index(i)
-                champs1 = texto[2:pl_egal]
-                pl_egal += 2
-                champs2 = texto[pl_egal:-1]
-                print(champs1, champs2)
-
-                va.ifi(champs1,champs2)
-                modo = 3
-                print(vari)
-                texto = "    "
-
     if modo == 0:
         if texto[:6] == "import":
             textu = texto[7:]
-            print('mode = 0')
             try:
                 if textu == 'redi':
                     import redi
+                texto = ""
             except:
                 texto = 'no modules named: ' + textu
-
         for i in texto:
             if texto[:5] == 'sc.cp':
                 break
@@ -193,29 +162,17 @@ async def enter(event):
             if i == '=':
                 pl_egal = texto.index(i)
                 champs1 = texto[0:pl_egal]
-                for i in champs1:
-                    if i == " ":
-                        pl_i = champs1.index(i)
-                        pl_j = pl_i + 1
-                        champs1 = champs1[:pl_i] + champs1[pl_j:]
+                chmaps1 = champs1.replace(' ', '')
                 pl_egal += 1
                 champs2 = texto[pl_egal:]
-                for i in champs2:
-                    if i == " ":
-                        pl_i = champs2.index(i)
-                        pl_j = pl_i + 1
-                        champs2 = champs2[:pl_i] + champs2[pl_j:]
+                chmaps2 = champs2.replace(' ', '')
                 champs2 = eval(champs2)
                 try:
                     champs2 = int(champs2)
                 except:
                     pass
-                vari[champs1] = champs2
-                va.ch(champs1,champs2)
-                print(vari)
                 texto = ""
                 globals()[champs1] = champs2
-
         texta = texto
         if texto != "":
             com = eval(texto)
@@ -227,8 +184,8 @@ async def oled_display2():
     global modo, texto
     if modo == 1:
         modo = 2
-        L1, L2 = 5, 6
-        fil = 'tempo.py'
+        L1, L2 = 1,3
+        fil='IFI.py'
         fi = open(fil, 'r')
         ligne = fi.readline()
         oled.fill(0)
@@ -257,12 +214,9 @@ async def oled_display2():
                 modo = 0
                 texto = ""
             await uasyncio.sleep_ms(200)
-
 async def main():
     while 1:
         if modo == 0:
-            uasyncio.create_task(oled_display(texto))
-        if modo == 2:
             uasyncio.create_task(oled_display(texto))
         if modo == 1:
             uasyncio.create_task(oled_display2())
