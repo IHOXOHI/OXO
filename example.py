@@ -9,4 +9,4 @@ aa2 ###display the command passed before the last one
 bb #display the lines of the file named at the line 188 and 189; you can change the name or the line by a sc.md command, press reset, and after write 'bb'
 cc # list alls files
 
-import myscript    #you have to place the file in your lib and add the line to indicate this possible import in your main (you can too import directly a module by your main), to execute the file test.py
+import myscript    #you have to place the file in your lib and add the line to indicate this possible import in your main (you can too import directly a module by your main), to execute the file myscript.py
