@@ -1,16 +1,3 @@
-import os
-
-def view(ori,L=1):
-    fil_ori = open(ori, "r")
-    if L != 1:
-        n = 1
-        L -= 1
-        while n != L:
-            l = fil_ori.readline()
-            n+=1
-    l = fil_ori.readline()
-    fil_ori.close()
-    return l
 
 def cp(ori, des,ch_lg=0, ch_txt="\n"):
     fil_ori = open(ori, "r")
