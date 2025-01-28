@@ -1,14 +1,14 @@
 import machine
 import pyb
 import uasyncio
-from ssd1306 import SSD1306_I2C
+from sh1107 import SH1107_I2C
 import shell_commands as sc
 from micropython import const
 #import myscript
 
 i2c = machine.I2C(1)
-oled = SSD1306_I2C(128,64,i2c)
-width_screen = const(15)
+oled = SH1107_I2C(128,128,i2c,address=0x3c,rotate=90)
+width_screen = const(16)
 step_start = const(5)
 height_step = const(10)
 punto = 0
@@ -26,45 +26,45 @@ async def oled_display(texto):
 
     if (len(texto)) > width_screen:
         text1 = texto[:width_screen]
-        oled.text(text1, 5, step_start , 1)
+        oled.text(text1, 0, step_start , 1)
         text2 = texto[width_screen:]
         p1 = step_start + height_step
-        oled.text(text2, 5, p1 , 1)
+        oled.text(text2, 0, p1 , 1)
     if (len(texto)) > (width_screen * 2):
         text1 = texto[:width_screen]
-        oled.text(text1, 5, step_start , 1)
+        oled.text(text1, 0, step_start , 1)
         t1 = width_screen *2
         text2 = texto[width_screen:t1]
         p1 = step_start + height_step
-        oled.text(text2, 5, p1 , 1)
+        oled.text(text2, 0, p1 , 1)
         text3 = texto[t1:]
         p2 = step_start + (height_step * 2)
-        oled.text(text3, 5, p2 , 1)
+        oled.text(text3, 0, p2 , 1)
     if (len(texto)) > (width_screen * 3):
         text1 = texto[:width_screen]
-        oled.text(text1, 5, step_start , 1)
+        oled.text(text1, 0, step_start , 1)
         t1 = width_screen *2
         text2 = texto[width_screen:t1]
         p1 = step_start + height_step
-        oled.text(text2, 5, p1 , 1)
+        oled.text(text2, 0, p1 , 1)
         t2 = width_screen *3
         text3 = texto[t1:t2]
         p2 = step_start + (height_step * 2)
-        oled.text(text3, 5, p2 , 1)
+        oled.text(text3, 0, p2 , 1)
         t3 = width_screen *4
         text4 = texto[t2:]
         p3 = step_start + (height_step * 3)
-        oled.text(text4, 5, p3 , 1)
+        oled.text(text4, 0, p3 , 1)
     else:
-        oled.text(texto, 5, step_start , 1)
+        oled.text(texto, 0, step_start , 1)
     oled.show()
 
 #keyboard
 Penter = machine.Pin('PJ12', machine.Pin.IN, machine.Pin.PULL_UP)
-Pmode = machine.Pin('PG13', machine.Pin.IN, machine.Pin.PULL_UP)
+Pmode1 = machine.Pin('PG13', machine.Pin.IN, machine.Pin.PULL_UP)
+Pmode2 = machine.Pin('PG12', machine.Pin.IN, machine.Pin.PULL_UP)
 Pspace = machine.Pin('PJ0', machine.Pin.IN, machine.Pin.PULL_UP)
-Pdel = machine.Pin('PG12', machine.Pin.IN, machine.Pin.PULL_UP)
-Pp = machine.Pin('PJ1', machine.Pin.IN, machine.Pin.PULL_UP)
+Pdel = machine.Pin('PJ1', machine.Pin.IN, machine.Pin.PULL_UP)
 P0 = machine.Pin('PE5', machine.Pin.IN, machine.Pin.PULL_UP)
 P1 = machine.Pin('PI11', machine.Pin.IN, machine.Pin.PULL_UP)
 P2 = machine.Pin('PE4', machine.Pin.IN, machine.Pin.PULL_UP)
@@ -80,15 +80,16 @@ P11 = machine.Pin('PE6', machine.Pin.IN, machine.Pin.PULL_UP)
 P12 = machine.Pin('PI14', machine.Pin.IN, machine.Pin.PULL_UP)
 P13 = machine.Pin('PJ7', machine.Pin.IN, machine.Pin.PULL_UP)
 P14 = machine.Pin('PJ6', machine.Pin.IN, machine.Pin.PULL_UP)
-Pprime = machine.Pin('PB4', machine. Pin.OUT)
-
+PR = machine.Pin('PJ3', machine.Pin.IN, machine.Pin.PULL_UP)
+PL = machine.Pin('PK2', machine.Pin.IN, machine.Pin.PULL_UP)
 prime = 0
 texta = ""
 champs1 = ""
 champs2 = ""
 moda = 1
 async def check_keyboard():
-    global texto, moda, prime
+    global texto, prime, reci
+    moda = 1
     liste1 = ['a','b','c','d','e','f','g','h','i','j','k','l','m','/',',']
     liste2 = ['n','o','p','q','r','s','t','u','v','w','x','y','z',':','.']
     liste3 = ['0','1','2','3','4','5','6','7','8','9','+','-','*',"'","="]
@@ -99,24 +100,29 @@ async def check_keyboard():
         event = uasyncio.Event()
         uasyncio.create_task(enter(event))
         event.set()
-    if Pmode.value() == 0:
-        for i in range(1,4):
-            pyb.LED(i).off()
-        moda +=1
-        if moda == 4:
-            moda = 1
-        pyb.LED(moda).on()
+    if Pmode1.value() == 0:
+        moda = 2
+    if Pmode2.value() == 0:
+        moda = 3
     if Pspace.value() == 0:
         texto = texto + " "
     if Pdel.value() == 0:
         texto = texto[:-1]
-    if Pp.value() == 0:
+    if PL.value() == 0:
         if prime:
             prime = 0
-            Pprime.off()
+            pyb.LED(3).off()
         else:
             prime = 1
-            Pprime.on()
+            pyb.LED(3).on()
+    if PR.value() == 0:
+        num = texto
+        try:
+            num = 5 - int(num)
+            texto = reci[num]
+        except TypeError:
+            texto = 'not int'
+
     for i in range(15):
         key = eval('P' + str(i) + ".value()")
         if key == 0:
@@ -142,12 +148,8 @@ async def enter(event):
     texto = str(texto)
     if texta == texto:
         texto = ""
-    if modo == 3:
-        modo == 0
-    if texto[:2] == 'aa': #you have to write 'aa1' for the last command
-        qq = 5 - (int(texto[2:]))
-        texto = reci[qq]
-        modo = 3
+    #if modo == 3:
+     #   modo == 0
     if texto[:2] == 'bb': # to display a file named at the line 188
         texto = ""
         modo = 1
@@ -200,27 +202,28 @@ async def oled_display2():
     global modo, texto
     if modo == 1:
         modo = 2
-        L1, L2 = 1,3
-        fil = 'tempo.py'
+        L1, L2 = 1,7
+        fil = 'main.py'
         fi = open(fil, 'r')
-        ligne = fi.readline()
+        ligne = fi.readline()[:-1]
         oled.fill(0)
         nl = 1
         place = step_start
         while nl != L1:
-            ligne = fi.readline()
+            ligne = fi.readline()[:-1]
             nl += 1
         while nl != L2:
             if len(ligne) > width_screen:
                 ligne1 = ligne[:width_screen]
-                oled.text(ligne1, 5, place, 1)
+                oled.text(ligne1, 0, place, 1)
                 ligne2 = ligne[width_screen:]
                 place = place + height_step
-                oled.text(ligne2, 5, place, 1)
-            else:
-                oled.text(ligne, 5, place, 1)
+                oled.text(ligne2, 0, place, 1)
                 place = place + height_step
-            ligne = fi.readline()
+            else:
+                oled.text(ligne, 0, place, 1)
+                place = place + height_step
+            ligne = fi.readline()[:-1]
             nl += 1
         oled.show()
         fi.close()
