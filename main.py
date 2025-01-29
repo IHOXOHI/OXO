@@ -29,9 +29,7 @@ async def oled_display(texto):
     if pp >= 1:
         ori = 0#horizontal place
         place = step_start  #vertical place
-        print('texto: ', texto)
         ss = texto[ori:width_screen]
-        print('ss: ', ss)
         oled.text(ss, 0, step_start, 1)
         ori =  ori + width_screen
         fin = ori + width_screen
@@ -40,14 +38,12 @@ async def oled_display(texto):
             ori += width_screen
             fin += width_screen
             place += height_step
-            print('uu: ', uu)
             oled.text(uu, 0, place, 1)
             if (len(texto)) > (width_screen*3): # 4 lines
                 qq = texto[ori:fin]
                 ori += width_screen
                 fin += width_screen
                 place += height_step
-                print('qq: ', qq)
                 oled.text(qq, 0, place, 1)
                 if (len(texto)) > (width_screen*4): # 5
                     kk = texto[ori:fin]
@@ -58,7 +54,6 @@ async def oled_display(texto):
                     oled.text(kk, 0, place, 1)
                     ##if: add other paragraph like the last one 'if:', change numbers to add a new line on the screen. Again and again if you need it.
         vv = texto[ori:]  #the last line
-        print('vv: ', vv)
         place += height_step
         oled.text(vv, 0, place, 1)
         oled.show()
@@ -122,7 +117,7 @@ async def check_keyboard():
         else:
             prime = 1
             pyb.LED(3).on()
-    if PR.value() == 0:
+    if PR.value() == 0: #a key to display last commands; 1 and key for the last one
         num = texto
         try:
             num = 5 - int(num)
