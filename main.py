@@ -14,8 +14,9 @@ height_step = const(10)
 punto = 0
 texto = ""
 modo = 0
+
 async def oled_display(texto):
-    global punto
+    global punto, ori, fin, place
     oled.fill(0)
     if punto:
         texto = str(texto) + "|"
@@ -23,41 +24,47 @@ async def oled_display(texto):
     else:
         texto = str(texto)
         punto = 1
-
-    if (len(texto)) > width_screen:
-        text1 = texto[:width_screen]
-        oled.text(text1, 0, step_start , 1)
-        text2 = texto[width_screen:]
-        p1 = step_start + height_step
-        oled.text(text2, 0, p1 , 1)
-    if (len(texto)) > (width_screen * 2):
-        text1 = texto[:width_screen]
-        oled.text(text1, 0, step_start , 1)
-        t1 = width_screen *2
-        text2 = texto[width_screen:t1]
-        p1 = step_start + height_step
-        oled.text(text2, 0, p1 , 1)
-        text3 = texto[t1:]
-        p2 = step_start + (height_step * 2)
-        oled.text(text3, 0, p2 , 1)
-    if (len(texto)) > (width_screen * 3):
-        text1 = texto[:width_screen]
-        oled.text(text1, 0, step_start , 1)
-        t1 = width_screen *2
-        text2 = texto[width_screen:t1]
-        p1 = step_start + height_step
-        oled.text(text2, 0, p1 , 1)
-        t2 = width_screen *3
-        text3 = texto[t1:t2]
-        p2 = step_start + (height_step * 2)
-        oled.text(text3, 0, p2 , 1)
-        t3 = width_screen *4
-        text4 = texto[t2:]
-        p3 = step_start + (height_step * 3)
-        oled.text(text4, 0, p3 , 1)
+    nn = len(texto)
+    pp = nn // width_screen
+    if pp >= 1:
+        ori = 0#horizontal place
+        place = step_start  #vertical place
+        print('texto: ', texto)
+        ss = texto[ori:width_screen]
+        print('ss: ', ss)
+        oled.text(ss, 0, step_start, 1)
+        ori =  ori + width_screen
+        fin = ori + width_screen
+        if (len(texto)) > (width_screen*2): # 3 lines on the screen
+            uu = texto[ori:fin]
+            ori += width_screen
+            fin += width_screen
+            place += height_step
+            print('uu: ', uu)
+            oled.text(uu, 0, place, 1)
+            if (len(texto)) > (width_screen*3): # 4 lines
+                qq = texto[ori:fin]
+                ori += width_screen
+                fin += width_screen
+                place += height_step
+                print('qq: ', qq)
+                oled.text(qq, 0, place, 1)
+                if (len(texto)) > (width_screen*4): # 5
+                    kk = texto[ori:fin]
+                    ori += width_screen
+                    fin += width_screen
+                    place += height_step
+                    print('kk: ', kk)
+                    oled.text(kk, 0, place, 1)
+                    ##if: add other paragraph like the last one 'if:', change numbers to add a new line on the screen. Again and again if you need it.
+        vv = texto[ori:]  #the last line
+        print('vv: ', vv)
+        place += height_step
+        oled.text(vv, 0, place, 1)
+        oled.show()
     else:
         oled.text(texto, 0, step_start , 1)
-    oled.show()
+        oled.show()
 
 #keyboard
 Penter = machine.Pin('PJ12', machine.Pin.IN, machine.Pin.PULL_UP)
@@ -148,14 +155,16 @@ async def enter(event):
     texto = str(texto)
     if texta == texto:
         texto = ""
-    #if modo == 3:
-     #   modo == 0
-    if texto[:2] == 'bb': # to display a file named at the line 188
+    if texto[:4] == 'view': # to display a file named at the line 188, mas o minos
         texto = ""
         modo = 1
-    if texto[:2] == 'cc': # to list alls files
+    if texto[:2] == 'ls': # to list alls files
        import os
-       texto = os.listdir()
+       try:
+           textu = texto[3:-1]
+       except:
+           textu = ''
+       texto = os.listdir(textu)
     if modo == 0:
         if texto[:6] == "import":
             textu = texto[7:]
