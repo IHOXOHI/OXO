@@ -1,13 +1,38 @@
 import machine
 import pyb
 import uasyncio
-from sh1107 import SH1107_I2C
 import shell_commands as sc
 from micropython import const
-#import myscript
+##display lib(s)
+from sh1107 import SH1107_I2C
+# optionnal libs
+from micropython_rfm9x import *
 
-i2c = machine.I2C(1)
+############################################  SPI for RFM9X
+#spi = machine.SPI(5, baudrate=2_000_000)
+spi = machine.SPI(5, baudrate=1_000_000, polarity=0, phase=0)
+CS = machine.Pin('PK1', machine.Pin.OUT)
+RE = machine.Pin('PB4', machine.Pin.OUT)
+FR = 433.0
+rfm9x = RFM9x(spi, CS, RE, FR)
+rfm9x.hight_power = 5
+## possibles commands: rfm9x.send(b'MessageToSend'), data = rfm9x.receive(), text = str(data, "utf-8"), text
+
+async def rfm_check1(evento):
+    global texto
+    text = ""
+    for i in range(5):
+        data = rfm9x.receive()
+        if data != None:
+            text = str(data, "utf-8")
+    texto = text
+    await evento.wait()
+    evento.clear()
+
+############################################   I2C for OLED
+i2c = machine.I2C(4)
 oled = SH1107_I2C(128,128,i2c,address=0x3c,rotate=90)
+##  Variables to display text FROM the keyboard
 width_screen = const(16)
 step_start = const(5)
 height_step = const(10)
@@ -50,7 +75,6 @@ async def oled_display(texto):
                     ori += width_screen
                     fin += width_screen
                     place += height_step
-                    print('kk: ', kk)
                     oled.text(kk, 0, place, 1)
                     ##if: add other paragraph like the last one 'if:', change numbers to add a new line on the screen. Again and again if you need it.
         vv = texto[ori:]  #the last line
@@ -61,12 +85,14 @@ async def oled_display(texto):
         oled.text(texto, 0, step_start , 1)
         oled.show()
 
-#keyboard
+##################################################    KEYBOARD
+#first hand
 Penter = machine.Pin('PJ12', machine.Pin.IN, machine.Pin.PULL_UP)
 Pmode1 = machine.Pin('PG13', machine.Pin.IN, machine.Pin.PULL_UP)
 Pmode2 = machine.Pin('PG12', machine.Pin.IN, machine.Pin.PULL_UP)
 Pspace = machine.Pin('PJ0', machine.Pin.IN, machine.Pin.PULL_UP)
 Pdel = machine.Pin('PJ1', machine.Pin.IN, machine.Pin.PULL_UP)
+#second hand
 P0 = machine.Pin('PE5', machine.Pin.IN, machine.Pin.PULL_UP)
 P1 = machine.Pin('PI11', machine.Pin.IN, machine.Pin.PULL_UP)
 P2 = machine.Pin('PE4', machine.Pin.IN, machine.Pin.PULL_UP)
@@ -84,13 +110,13 @@ P13 = machine.Pin('PJ7', machine.Pin.IN, machine.Pin.PULL_UP)
 P14 = machine.Pin('PJ6', machine.Pin.IN, machine.Pin.PULL_UP)
 PR = machine.Pin('PJ3', machine.Pin.IN, machine.Pin.PULL_UP)
 PL = machine.Pin('PK2', machine.Pin.IN, machine.Pin.PULL_UP)
+
+########## Variables to manage reactions of the keyboard
 prime = 0
-texta = ""
-champs1 = ""
-champs2 = ""
 moda = 1
+reci = ['1','2','3','4','5'] # five records of passed commands
 async def check_keyboard():
-    global texto, prime, reci
+    global texto, texta, prime, reci
     moda = 1
     liste1 = ['a','b','c','d','e','f','g','h','i','j','k','l','m','/',',']
     liste2 = ['n','o','p','q','r','s','t','u','v','w','x','y','z',':','.']
@@ -98,10 +124,27 @@ async def check_keyboard():
     liste4 = ['A','B','C','D','E','F','G','H','I','J','K','L','M','(',')']
     liste5 = ['N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[',']']
     liste6 = ["sc.md('boot.py',5,\"pyb.main('SCRIPT.py')\")",'!','!','>','<','#','_','{','}','\"',"sc.md('main.py',188,\"        fil='SCRIPT.py'\")",'`','%','', "sc.md('main.py', 167, '        L1,L2 = 3,6')"]
+
     if Penter.value() == 0:
+        if texta == texto:
+            texto = ""
+        try:
+            texto = str(texto)
+            if texto[0] == '[':
+                pass
+            elif texto == "":
+                pass
+            #elif texto == "None":
+             #   pass
+            else:
+                reci.append(texto)
+                reci.pop(0)
+        except:
+            pass
         event = uasyncio.Event()
         uasyncio.create_task(enter(event))
         event.set()
+
     if Pmode1.value() == 0:
         moda = 2
     if Pmode2.value() == 0:
@@ -110,6 +153,7 @@ async def check_keyboard():
         texto = texto + " "
     if Pdel.value() == 0:
         texto = texto[:-1]
+
     if PL.value() == 0:
         if prime:
             prime = 0
@@ -117,13 +161,16 @@ async def check_keyboard():
         else:
             prime = 1
             pyb.LED(3).on()
-    if PR.value() == 0: #a key to display last commands; 1 and key for the last one
-        num = texto
-        try:
-            num = 5 - int(num)
-            texto = reci[num]
-        except TypeError:
-            texto = 'not int'
+    if PR.value() == 0:
+        if texto == "":
+            texto = str(reci)
+        else:
+            num = texto
+            try:
+                num = 5 - int(num)
+                texto = reci[num]
+            except TypeError:
+                texto = 'not int'
 
     for i in range(15):
         key = eval('P' + str(i) + ".value()")
@@ -143,13 +190,23 @@ async def check_keyboard():
                     texto = texto + liste6[i]
                 else:
                     texto = texto + liste3[i]
+
+########## Variables to display text ON the screen
+texta = ""
+champs1 = ""
+champs2 = ""
 modo = 0
-reci = ['1','2','3','4','5'] # five records of passed commands
 async def enter(event):
     global texto, texta, champs1, champs2, modo, reci
-    texto = str(texto)
+    try:
+        texto = str(texto)
+    except:
+        pass
+    if (modo == 3):
+        modo = 0
     if texta == texto:
         texto = ""
+        modo = 3
     if texto[:4] == 'view': # to display a file named at the line 188, mas o minos
         texto = ""
         modo = 1
@@ -169,10 +226,17 @@ async def enter(event):
                 texto = ""
             except:
                 texto = 'no modules named: ' + textu
+        if texto[:3] == "RFM":
+            evento = uasyncio.Event()
+            uasyncio.create_task(rfm_check1(evento))
+            evento.set()
         for i in texto:
-            if texto[:5] == 'sc.cp':
+            if texto[:1] == '[':
                 break
-            if texto[:5] == 'sc.md':
+                texto = ""
+            if texto[:3] == 'sc.':
+                break
+            if texto[:6] == 'RFM':
                 break
             if i == '=':
                 pl_egal = texto.index(i)
@@ -186,8 +250,6 @@ async def enter(event):
                     champs2 = int(champs2)
                 except:
                     pass
-                reci.append(texto)
-                reci.pop(0)
                 texto = ""
                 globals()[champs1] = champs2
         texta = texto
@@ -202,6 +264,7 @@ async def enter(event):
     await event.wait()
     event.clear()
 
+# For display a file
 async def oled_display2():
     global modo, texto
     if modo == 1:
@@ -237,6 +300,8 @@ async def oled_display2():
                 modo = 0
                 texto = ""
             await uasyncio.sleep_ms(200)
+
+############################    MAIN
 async def main():
     while 1:
         if modo == 0 or modo == 3:
