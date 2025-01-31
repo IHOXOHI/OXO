@@ -126,7 +126,7 @@ async def check_keyboard():
     liste6 = ["sc.md('boot.py',5,\"pyb.main('SCRIPT.py')\")",'!','!','>','<','#','_','{','}','\"',"sc.md('main.py',188,\"        fil='SCRIPT.py'\")",'`','%','', "sc.md('main.py', 167, '        L1,L2 = 3,6')"]
 
     if Penter.value() == 0:
-        if texta == texto:
+        if texta == texto:#to clean the display with the enter key
             texto = ""
         try:
             texto = str(texto)
@@ -134,10 +134,8 @@ async def check_keyboard():
                 pass
             elif texto == "":
                 pass
-            #elif texto == "None":
-             #   pass
             else:
-                reci.append(texto)
+                reci.append(texto) # to record command
                 reci.pop(0)
         except:
             pass
@@ -145,23 +143,23 @@ async def check_keyboard():
         uasyncio.create_task(enter(event))
         event.set()
 
-    if Pmode1.value() == 0:
+    if Pmode1.value() == 0: #when 1 key of the second hand and the key to activate the mode 2 on the first hand are pressed together
         moda = 2
-    if Pmode2.value() == 0:
+    if Pmode2.value() == 0: #when 1 key of the second hand and the key to activate the mode 3 on the first hand are pressed together
         moda = 3
     if Pspace.value() == 0:
         texto = texto + " "
     if Pdel.value() == 0:
         texto = texto[:-1]
 
-    if PL.value() == 0:
+    if PL.value() == 0: # to have acces to lists 4 to 6, or not
         if prime:
             prime = 0
             pyb.LED(3).off()
         else:
             prime = 1
             pyb.LED(3).on()
-    if PR.value() == 0:
+    if PR.value() == 0: # the recorded commands, without argument, it display the list of alls recorded commands passed, with the number 1 on the screen, it display the last command that you can use again
         if texto == "":
             texto = str(reci)
         else:
@@ -172,20 +170,20 @@ async def check_keyboard():
             except TypeError:
                 texto = 'not int'
 
-    for i in range(15):
+    for i in range(15): 
         key = eval('P' + str(i) + ".value()")
         if key == 0:
-            if moda == 1:
+            if moda == 1:#when just one key of the second hand is pressed
                 if prime:
                     texto = texto + liste4[i]
                 else:
                     texto = texto + liste1[i]
-            if moda == 2:
+            if moda == 2: #when 1 key of the second hand and the key to activate the mode 2 on the first hand are pressed together
                 if prime:
                     texto = texto + liste5[i]
                 else:
                     texto = texto + liste2[i]
-            if moda == 3:
+            if moda == 3: #when 1 key of the second hand and the key to activate the mode 3 on the first hand are pressed together
                 if prime:
                     texto = texto + liste6[i]
                 else:
@@ -204,7 +202,7 @@ async def enter(event):
         pass
     if (modo == 3):
         modo = 0
-    if texta == texto:
+    if texta == texto: # to escape when no result is returned
         texto = ""
         modo = 3
     if texto[:4] == 'view': # to display a file named at the line 188, mas o minos
@@ -218,7 +216,7 @@ async def enter(event):
            textu = ''
        texto = os.listdir(textu)
     if modo == 0:
-        if texto[:6] == "import":
+        if texto[:6] == "import": # to execute a file that you have to add in your current folder, and his name there, below.
             textu = texto[7:]
             try:
                 if textu == 'myscript':
@@ -231,14 +229,14 @@ async def enter(event):
             uasyncio.create_task(rfm_check1(evento))
             evento.set()
         for i in texto:
-            if texto[:1] == '[':
+            if texto[:1] == '[': # to escape the record of the command reci (recorded commands acces)
                 break
                 texto = ""
-            if texto[:3] == 'sc.':
+            if texto[:3] == 'sc.':# to escape when a file is managed by shell_commands script
                 break
-            if texto[:6] == 'RFM':
+            if texto[:6] == 'RFM': # to escape when a rfm communication is done
                 break
-            if i == '=':
+            if i == '=': #to add new variables
                 pl_egal = texto.index(i)
                 champs1 = texto[0:pl_egal]
                 chmaps1 = champs1.replace(' ', '')
@@ -259,18 +257,20 @@ async def enter(event):
                 texto = com
             except TypeError:
                 pass
+            #except ValueError:
+             #   pass
             except:
-                texto = 'ERROR'
+                texto = ''
     await event.wait()
     event.clear()
 
-# For display a file
+# to display a file
 async def oled_display2():
     global modo, texto
     if modo == 1:
         modo = 2
-        L1, L2 = 1,7
-        fil = 'main.py'
+        L1, L2 = 1,7 ## change these numbers by a sc commands to see other lines of your file; a reset is necessary if you do it.
+        fil = 'main.py' ## change these name by a sc commands to see other file; a reset is necessary if you do it.
         fi = open(fil, 'r')
         ligne = fi.readline()[:-1]
         oled.fill(0)
