@@ -237,12 +237,11 @@ async def enter(event):
             if texto[:6] == 'RFM': # to escape when a rfm communication is done
                 break
             if i == '=': #to add new variables
+                texto = texto.replace(' ', '')
                 pl_egal = texto.index(i)
                 champs1 = texto[0:pl_egal]
-                chmaps1 = champs1.replace(' ', '')
                 pl_egal += 1
                 champs2 = texto[pl_egal:]
-                chmaps2 = champs2.replace(' ', '')
                 champs2 = eval(champs2)
                 try:
                     champs2 = int(champs2)
