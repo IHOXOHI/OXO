@@ -21,17 +21,6 @@ punto = 0
 texto = ""
 modo = 0
 
-def entrance():
-    oled.fill(0)
-    oled.rect(2,5,120,120,1)
-    oled.text('Micropython', 8,20,1)
-    oled.text(':', 90,101,1)
-    oled.text('-<', 91,101,1)
-    oled.text('S', 86,103,1)
-    oled.show()
-    sleep(30)
-entrance()
-
 async def oled_display(texto):
     global punto, ori, fin, place
     oled.fill(0)
@@ -103,7 +92,7 @@ Penter = machine.Pin('Y0', machine.Pin.IN, machine.Pin.PULL_UP)
 Pspace = machine.Pin('Y1', machine.Pin.IN, machine.Pin.PULL_UP)
 Pdel = machine.Pin('X4', machine.Pin.IN, machine.Pin.PULL_UP)
 PR = machine.Pin('Y5', machine.Pin.IN, machine.Pin.PULL_UP)
-Pq = pyb.Switch()
+PQ = pyb.Switch()
 
 moda = 1
 reci = ['1','2','3','4','5'] # five records of passed commands
@@ -135,7 +124,7 @@ async def check_keyboard2():
         texto = texto + " "
     if Pdel.value() == 0:
         texto = texto[:-1]
-    if Pq.value():
+    if PQ.value():
         texto = "a = 5"
 
     if PR.value() == 0:
@@ -197,12 +186,11 @@ async def enter(event):
             if texto[:6] == 'RFM':
                 break
             if i == '=':
+                texto = texto.replace(' ', '')
                 pl_egal = texto.index(i)
                 champs1 = texto[0:pl_egal]
-                chmaps1 = champs1.replace(' ', '')
                 pl_egal += 1
                 champs2 = texto[pl_egal:]
-                chmaps2 = champs2.replace(' ', '')
                 champs2 = eval(champs2)
                 try:
                     champs2 = int(champs2)
