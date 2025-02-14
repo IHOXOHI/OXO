@@ -7,7 +7,7 @@ from micropython import const
 from sh1107 import SH1107_I2C
 # optionnal libs
 from micropython_rfm9x import *
-#TO DO: an import which stop the uasyncio.run, so create a loop.main
+#TO DO: *an import which stop the uasyncio.run, so create a loop.main**a second main for jump between togethers if necessary...
 rtc = machine.RTC()
 ############################################   I2C for OLED
 i2c = machine.I2C(2)
@@ -145,6 +145,8 @@ async def check_keyboard2():
                 texto = reci[num]
             except TypeError:
                 texto = 'not int'
+    if S1.value() == 0:
+        texto = "view('test.py',3,8)"
 
 ########## Variables to display text ON the screen
 texta = ""
@@ -167,19 +169,19 @@ async def enter(event):
         print(texto)
         n = 0
         for i in texto:
-            if i == ',':
-                pl_virgule1 = texto.index(i)
-                namo = texto[0:pl_virgule1]
-                texto = texto[pl_virgule1:]
-                print(texto)
-                break
-        for i in texto:
-            if i == ',':
+            if (i == ',') and (n == 1):
                 pl_virgule2 = texto.index(i)
                 L1 = texto[0:pl_virgule2]
+                pl_virgule2 += 1
                 L2 = texto[pl_virgule2:]
-                print(namo,L1,L2)
                 break
+            if (i == ',') and (n == 0):
+                pl_virgule1 = texto.index(i)
+                namo = texto[0:pl_virgule1]
+                pl_virgule1 += 1
+                texto = texto[pl_virgule1:]
+                n += 1
+            
         texto = ""
         modo = 1
     if texto[:2] == 'ls': # to list alls files
@@ -223,7 +225,7 @@ async def enter(event):
                     pass
                 texto = ""
                 globals()[champs1] = champs2
-                break#down!!:!!! the firmware??? YEAH¡¡¡¡
+                break
         texta = texto
         if texto != "":
             try:
@@ -242,7 +244,9 @@ L1, L2 = 1, 7
 async def oled_display2(namo, L1=1, L2=7):
     global modo, texto
     if modo == 1:
+        #print('1',namo, L1, L2)
         sc.cp_view(namo,L1,L2)
+        await uasyncio.sleep_ms(200)
         modo = 2
         fil = 'tempo.py' #for security better to change this name by your's!
         fi = open(fil, 'r')
@@ -250,6 +254,8 @@ async def oled_display2(namo, L1=1, L2=7):
         oled.fill(0)
         nl = 1
         place = step_start
+        L1 = int(L1)
+        L2 = int(L2)
         while nl != L1:
             ligne = fi.readline()[:-1]
             nl += 1
