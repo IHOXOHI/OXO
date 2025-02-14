@@ -7,9 +7,8 @@ from micropython import const
 from sh1107 import SH1107_I2C
 # optionnal libs
 from micropython_rfm9x import *
-from time import sleep
-
-
+#TO DO: an import which stop the uasyncio.run, so create a loop.main
+rtc = machine.RTC()
 ############################################   I2C for OLED
 i2c = machine.I2C(2)
 oled = SH1107_I2C(128,128,i2c,address=0x3c,rotate=90)
@@ -61,9 +60,15 @@ async def oled_display(texto):
         vv = texto[ori:]  #the last line
         place += height_step
         oled.text(vv, 0, place, 1)
+        t = rtc.datetime()
+        ho, mi = t[4], t[5]
+        oled.text("{}: {}".format(ho,mi), 88, 110, 1)
         oled.show()
     else:
         oled.text(texto, 0, step_start , 1)
+        t = rtc.datetime()
+        ho, mi = t[4], t[5]
+        oled.text("{}:{}".format(ho,mi), 88, 110, 1)
         oled.show()
 
 #uart to communicate with the keyboard's board
@@ -80,6 +85,7 @@ async def check_keyboard1():
         pass
     else:
         data = uart1.read()
+        print(data)
         try:
             pre_text = str(data)
             key = pre_text[2:-1]
@@ -88,11 +94,15 @@ async def check_keyboard1():
             pass
 
 ## Control keys from NONO
-Penter = machine.Pin('Y0', machine.Pin.IN, machine.Pin.PULL_UP)
-Pspace = machine.Pin('Y1', machine.Pin.IN, machine.Pin.PULL_UP)
-Pdel = machine.Pin('X4', machine.Pin.IN, machine.Pin.PULL_UP)
-PR = machine.Pin('Y5', machine.Pin.IN, machine.Pin.PULL_UP)
-PQ = pyb.Switch()
+Penter = machine.Pin('X1', machine.Pin.IN, machine.Pin.PULL_UP)
+Pspace = machine.Pin('X2', machine.Pin.IN, machine.Pin.PULL_UP)
+Pdel = machine.Pin('X3', machine.Pin.IN, machine.Pin.PULL_UP)
+PR = machine.Pin('Y4', machine.Pin.IN, machine.Pin.PULL_UP)
+## 4 extra keys for specials commands like "sc.cp(....
+S1 = machine.Pin('Y5', machine.Pin.IN, machine.Pin.PULL_UP)
+S2 = machine.Pin('Y7', machine.Pin.IN, machine.Pin.PULL_UP)
+S3 = machine.Pin('Y1', machine.Pin.IN, machine.Pin.PULL_UP)
+S4 = machine.Pin('Y0', machine.Pin.IN, machine.Pin.PULL_UP)
 
 moda = 1
 reci = ['1','2','3','4','5'] # five records of passed commands
@@ -124,8 +134,6 @@ async def check_keyboard2():
         texto = texto + " "
     if Pdel.value() == 0:
         texto = texto[:-1]
-    if PQ.value():
-        texto = "a = 5"
 
     if PR.value() == 0:
         if texto == "":
@@ -144,7 +152,7 @@ champs1 = ""
 champs2 = ""
 modo = 0
 async def enter(event):
-    global texto, texta, champs1, champs2, modo, reci
+    global texto, texta, champs1, champs2, modo, reci, namo, L1, L2
     try:
         texto = str(texto)
     except:
@@ -154,7 +162,24 @@ async def enter(event):
     if texta == texto:
         texto = ""
         modo = 3
-    if texto[:4] == 'view': # to display a file named at the line 188, mas o minos
+    if texto[:4] == 'view':
+        texto = texto[5:-1]
+        print(texto)
+        n = 0
+        for i in texto:
+            if i == ',':
+                pl_virgule1 = texto.index(i)
+                namo = texto[0:pl_virgule1]
+                texto = texto[pl_virgule1:]
+                print(texto)
+                break
+        for i in texto:
+            if i == ',':
+                pl_virgule2 = texto.index(i)
+                L1 = texto[0:pl_virgule2]
+                L2 = texto[pl_virgule2:]
+                print(namo,L1,L2)
+                break
         texto = ""
         modo = 1
     if texto[:2] == 'ls': # to list alls files
@@ -198,6 +223,7 @@ async def enter(event):
                     pass
                 texto = ""
                 globals()[champs1] = champs2
+                break#down!!:!!! the firmware??? YEAH¡¡¡¡
         texta = texto
         if texto != "":
             try:
@@ -210,13 +236,15 @@ async def enter(event):
     await event.wait()
     event.clear()
 
-# For display a file
-async def oled_display2():
+# To display a file
+namo = "main.py" ##the default displayed file
+L1, L2 = 1, 7
+async def oled_display2(namo, L1=1, L2=7):
     global modo, texto
     if modo == 1:
+        sc.cp_view(namo,L1,L2)
         modo = 2
-        L1, L2 = 1,7
-        fil = 'main.py'
+        fil = 'tempo.py' #for security better to change this name by your's!
         fi = open(fil, 'r')
         ligne = fi.readline()[:-1]
         oled.fill(0)
@@ -226,7 +254,7 @@ async def oled_display2():
             ligne = fi.readline()[:-1]
             nl += 1
         while nl != L2:
-            if len(ligne) > width_screen:
+            if len(ligne) > width_screen: #no more than a double ligne
                 ligne1 = ligne[:width_screen]
                 oled.text(ligne1, 0, place, 1)
                 ligne2 = ligne[width_screen:]
@@ -255,7 +283,7 @@ async def main():
         if modo == 0 or modo == 3:
             uasyncio.create_task(oled_display(texto))
         if modo == 1:
-            uasyncio.create_task(oled_display2())
+            uasyncio.create_task(oled_display2(namo, L1, L2))
         await uasyncio.sleep_ms(400)
 
 ############################################  SPI for RFM9X
