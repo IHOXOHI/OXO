@@ -74,7 +74,10 @@ def md(ori,ch_lg=0, ch_txt=""):
     os.remove('tempo.py')
     return "ok"
 
-def cp_view(ori, L1=1, L2=3):
+def cp_view(ori="boot.py", L1="1", L2="3"):
+    L1 = int(L1)
+    L2 = int(L2)
+    ori = ori[1:-1]
     fil_ori = open(ori, "r")
     fil_des = open('tempo.py', "w")
     l = fil_ori.readline()
