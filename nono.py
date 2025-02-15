@@ -147,8 +147,11 @@ async def check_keyboard2():
                 texto = 'not int'
     if S1.value() == 0:
         texto = "view('test.py',3,8)"
-
-########## Variables to display text ON the screen
+    if S2.value() == 0:
+        texto = "sc.cp('boot.py','test.py')"
+    if S4.value() == 0:
+        texto = "view('main.py',2,8)"
+########## Variables to display
 texta = ""
 champs1 = ""
 champs2 = ""
@@ -164,9 +167,9 @@ async def enter(event):
     if texta == texto:
         texto = ""
         modo = 3
+
     if texto[:4] == 'view':
         texto = texto[5:-1]
-        print(texto)
         n = 0
         for i in texto:
             if (i == ',') and (n == 1):
@@ -181,9 +184,9 @@ async def enter(event):
                 pl_virgule1 += 1
                 texto = texto[pl_virgule1:]
                 n += 1
-            
         texto = ""
         modo = 1
+
     if texto[:2] == 'ls': # to list alls files
        import os
        try:
@@ -191,6 +194,17 @@ async def enter(event):
        except:
            textu = ''
        texto = os.listdir(textu)
+    if texto[:2] == 'rm':
+       import os
+       try:
+           textu = texto[3:-1]
+           os.remove(textu)
+           texto = 'Done.'
+       except NameError:
+           texto = 'no file named: \n{}'.format(textu)
+       except:
+           texto = "No done?"
+
     if modo == 0:
         if texto[:6] == "import":
             textu = texto[7:]
@@ -241,37 +255,44 @@ async def enter(event):
 # To display a file
 namo = "main.py" ##the default displayed file
 L1, L2 = 1, 7
+nl = 1
 async def oled_display2(namo, L1=1, L2=7):
-    global modo, texto
+    global modo, texto, nl
     if modo == 1:
+        modo = 2
         #print('1',namo, L1, L2)
         sc.cp_view(namo,L1,L2)
         await uasyncio.sleep_ms(200)
-        modo = 2
         fil = 'tempo.py' #for security better to change this name by your's!
         fi = open(fil, 'r')
         ligne = fi.readline()[:-1]
         oled.fill(0)
         nl = 1
         place = step_start
-        L1 = int(L1)
+        L1 = int(L1) - 1
         L2 = int(L2)
-        while nl != L1:
-            ligne = fi.readline()[:-1]
-            nl += 1
-        while nl != L2:
-            if len(ligne) > width_screen: #no more than a double ligne
-                ligne1 = ligne[:width_screen]
-                oled.text(ligne1, 0, place, 1)
-                ligne2 = ligne[width_screen:]
-                place = place + height_step
-                oled.text(ligne2, 0, place, 1)
-                place = place + height_step
+        while nl < L2 :
+            if nl < (L1):
+                ligne = fi.readline()[:-1]
+            #ligne = str(nl) + " " + ligne
+                nl += 1
             else:
-                oled.text(ligne, 0, place, 1)
-                place = place + height_step
-            ligne = fi.readline()[:-1]
-            nl += 1
+                if len(ligne) > width_screen:
+                    nl += 1
+                    ligne = str(nl) + " " + ligne
+                    ligne1 = ligne[:width_screen]
+                    oled.text(ligne1, 0, place, 1)
+                    ligne2 = ligne[width_screen:]
+                    place = place + height_step
+                    oled.text(ligne2, 0, place, 1)
+                    place = place + height_step
+                    ligne = fi.readline()[:-1]
+                else:
+                    nl += 1
+                    ligne = str(nl) + " " + ligne
+                    oled.text(ligne, 0, place, 1)
+                    place = place + height_step
+                    ligne = fi.readline()[:-1]
         oled.show()
         fi.close()
     if modo == 2:
