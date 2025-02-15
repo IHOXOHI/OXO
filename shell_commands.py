@@ -82,12 +82,12 @@ def cp_view(ori="boot.py", L1="1", L2="3"):
     fil_des = open('tempo.py', "w")
     l = fil_ori.readline()
     n = 1
-    while n != L1:
+    while n < L1:
         l = fil_ori.readline()
         n += 1
-    while n != L2:
-        text = l + "\n"
-        fil_des.write(text)
+    while n <= L2:
+        #text = l + "\n"
+        fil_des.write(l)
         l = fil_ori.readline()
         n += 1
     fil_ori.close()
