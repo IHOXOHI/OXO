@@ -47,7 +47,8 @@ def md(ori,ch_lg=0, ch_txt=""):
     n = 1
     while l != "":
         if n == int(ch_lg):
-            text = str(ch_txt)
+            ch_txt = str(ch_txt) + "\n"
+            text = ch_txt
         else:
             text = str(l)
         fil_des.write(text)
