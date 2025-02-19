@@ -6,6 +6,12 @@ uart.init(9600, bits=8, parity=None, stop=1)
 
 def ASK(question):
     uart.write(question)
+    respi = resp()
+    try:
+        respi = str(respi)
+    except:
+        pass
+    return respi
 
 def resp():
     data = bytearray()
