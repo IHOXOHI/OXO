@@ -7,18 +7,19 @@ from micropython import const
 from sh1107 import SH1107_I2C
 # optionnal libs
 from micropython_rfm9x import *
-#TO DO: *an import which stop the uasyncio.run, so create a loop.main**a second main for jump between togethers if necessary...
+import ask
+
 rtc = machine.RTC()
+
 ############################################   I2C for OLED
 i2c = machine.I2C(2)
 oled = SH1107_I2C(128,128,i2c,address=0x3c,rotate=90)
-##  Variables to display text FROM the keyboard
+##  Dimensions of screen, place and style of the displayed prompt
 width_screen = const(16)
 step_start = const(5)
 height_step = const(10)
 punto = 0
 texto = ""
-modo = 0
 
 async def oled_display(texto):
     global punto, ori, fin, place
@@ -56,7 +57,6 @@ async def oled_display(texto):
                     fin += width_screen
                     place += height_step
                     oled.text(kk, 0, place, 1)
-                    ##if: add other paragraph like the last one 'if:', change numbers to add a new line on the screen. Again and again if you need it.
         vv = texto[ori:]  #the last line
         place += height_step
         oled.text(vv, 0, place, 1)
@@ -71,7 +71,7 @@ async def oled_display(texto):
         oled.text("{}:{}".format(ho,mi), 88, 110, 1)
         oled.show()
 
-#uart to communicate with the keyboard's board
+#uart to communicate with keyboard1
 uart1 = machine.UART(1, baudrate=9600)
 uart1.init(9600, bits=8, parity=None, stop=1)
 
@@ -85,7 +85,6 @@ async def check_keyboard1():
         pass
     else:
         data = uart1.read()
-        print(data)
         try:
             pre_text = str(data)
             key = pre_text[2:-1]
@@ -145,13 +144,16 @@ async def check_keyboard2():
                 texto = reci[num]
             except TypeError:
                 texto = 'not int'
+
     if S1.value() == 0:
-        texto = "view('test.py',3,8)"
+        texto = "ask.copy2('test.py')"
     if S2.value() == 0:
-        texto = "sc.cp('boot.py','test.py')"
+        texto = "sc.md('redi.py','4', '    LED(1).toggle()')"
+    if S3.value() == 0:
+        texto = "sc.count('redi.py')"
     if S4.value() == 0:
-        texto = "view('main.py',2,8)"
-########## Variables to display
+        texto = "ask.ASK('ls')"
+########## Variables to display 'correctly'
 texta = ""
 champs1 = ""
 champs2 = ""
@@ -171,23 +173,29 @@ async def enter(event):
     if texto[:4] == 'view':
         texto = texto[5:-1]
         n = 0
-        for i in texto:
-            if (i == ',') and (n == 1):
-                pl_virgule2 = texto.index(i)
-                L1 = texto[0:pl_virgule2]
-                pl_virgule2 += 1
-                L2 = texto[pl_virgule2:]
-                break
-            if (i == ',') and (n == 0):
-                pl_virgule1 = texto.index(i)
-                namo = texto[0:pl_virgule1]
-                pl_virgule1 += 1
-                texto = texto[pl_virgule1:]
-                n += 1
+        if texto[6] == ',':
+            for i in texto:
+                if (i == ',') and (n == 1):
+                    pl_virgule2 = texto.index(i)
+                    L1 = texto[0:pl_virgule2]
+                    pl_virgule2 += 1
+                    L2 = texto[pl_virgule2:]
+                    break
+                if (i == ',') and (n == 0):
+                    pl_virgule1 = texto.index(i)
+                    namo = texto[0:pl_virgule1]
+                    pl_virgule1 += 1
+                    texto = texto[pl_virgule1:]
+                    n += 1
+        else:
+            namo = texto
+            namo = texto[1:-1]
+            L1 = str(1)
+            L2 = sc.count(namo)
         texto = ""
         modo = 1
 
-    if texto[:2] == 'ls': # to list alls files
+    if texto[:2] == 'ls':
        import os
        try:
            textu = texto[3:-1]
@@ -207,17 +215,18 @@ async def enter(event):
 
     if modo == 0:
         if texto[:6] == "import":
-            textu = texto[7:]
+            module = texto[7:]
             try:
-                if textu == 'myscript':
-                    import myscript
-                texto = ""
+                if module == 'redi':
+                    eventi = uasyncio.Event()
+                    uasyncio.create_task(do_import1(eventi))
+                    eventi.set()
             except:
-                texto = 'no modules named: ' + textu
+                texto = 'no modules named: ' + module
         if texto[:3] == "RFM":
-            evento = uasyncio.Event()
-            uasyncio.create_task(rfm_check1(evento))
-            evento.set()
+            eventu = uasyncio.Event()
+            uasyncio.create_task(rfm_check1(eventu))
+            eventu.set()
         for i in texto:
             if texto[:1] == '[':
                 break
@@ -246,35 +255,45 @@ async def enter(event):
                 com = eval(texto)
                 texto = com
             except TypeError:
-                pass
+                texto = "Bad Type\nNo eval..."
+            except AttributeError:
+                texto = "Bad Attribute\nNo eval..."
             except:
                 texto = ''
     await event.wait()
     event.clear()
 
+#to make an import without stress
+async def do_import1(eventi):
+    import redi
+    await eventi.wait()
+    eventi.clear()
+
 # To display a file
 namo = "main.py" ##the default displayed file
 L1, L2 = 1, 7
 nl = 1
-async def oled_display2(namo, L1=1, L2=7):
+
+async def file_transfert(evento,namo, L1=1, L2=7):
+    namo = "'" + namo + "'"
+    sc.cp_view(namo,L1,L2)
+    await evento.wait()
+    evento.clear()
+async def oled_display2(eventa, L1=1, L2=7):
     global modo, texto, nl
     if modo == 1:
         modo = 2
-        #print('1',namo, L1, L2)
-        sc.cp_view(namo,L1,L2)
-        await uasyncio.sleep_ms(200)
-        fil = 'tempo.py' #for security better to change this name by your's!
+        fil = 'tempo.py'
         fi = open(fil, 'r')
         ligne = fi.readline()[:-1]
         oled.fill(0)
-        nl = 1
+        nl = 0
         place = step_start
         L1 = int(L1) - 1
         L2 = int(L2)
         while nl < L2 :
             if nl < (L1):
                 ligne = fi.readline()[:-1]
-            #ligne = str(nl) + " " + ligne
                 nl += 1
             else:
                 if len(ligne) > width_screen:
@@ -295,6 +314,9 @@ async def oled_display2(namo, L1=1, L2=7):
                     ligne = fi.readline()[:-1]
         oled.show()
         fi.close()
+    await eventa.wait()
+    eventa.clear()
+
     if modo == 2:
         while modo == 2:
             if Penter.value() == 0:
@@ -310,20 +332,23 @@ async def main():
         if modo == 0 or modo == 3:
             uasyncio.create_task(oled_display(texto))
         if modo == 1:
-            uasyncio.create_task(oled_display2(namo, L1, L2))
+            evento = uasyncio.Event()
+            uasyncio.create_task(file_transfert(evento,namo, L1, L2))
+            evento.set()
+            eventa = uasyncio.Event()
+            uasyncio.create_task(oled_display2(eventa, L1, L2))
+            eventa.set()
         await uasyncio.sleep_ms(400)
 
 ############################################  SPI for RFM9X
-###############################    RFM
 RADIO_FREQ_MHZ = 433.0
 CS = machine.Pin('X4', machine.Pin.OUT)
 RESET = machine.Pin('X15', machine.Pin.OUT)
 spi = machine.SPI(1, baudrate=2000000, polarity=0, phase=0)
 rfm9x = RFM9x(spi, CS, RESET, RADIO_FREQ_MHZ)
 rfm9x.hight_power = 2
-## possibles commands: rfm9x.send(b'MessageToSend'), data = rfm9x.receive(), text = str(data, "utf-8"), text
 
-async def rfm_check1(evento):
+async def rfm_check1(eventu):
     global texto
     text = ""
     for i in range(5):
@@ -331,7 +356,7 @@ async def rfm_check1(evento):
         if data != None:
             text = str(data, "utf-8")
     texto = text
-    await evento.wait()
-    evento.clear()
+    await eventu.wait()
+    eventu.clear()
 
 uasyncio.run(main())
